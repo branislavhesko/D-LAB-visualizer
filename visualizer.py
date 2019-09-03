@@ -62,7 +62,6 @@ class Visualizer:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         output_video = cv2.VideoWriter(video_name, fourcc, self.video.get(cv2.CAP_PROP_FPS), (
             int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
-        ret = True
         i=0
         for _ in tqdm(range(int(self.video.get(cv2.CAP_PROP_FRAME_COUNT)))):
             ret, frame = self.video.read()
@@ -72,8 +71,6 @@ class Visualizer:
             frame_time = self.video.get(cv2.CAP_PROP_POS_MSEC)
             output = self.process_single_frame(frame, frame_time)
             output_video.write(output)
-            if i == 30000:
-                break
         output_video.release()
 
     def process_single_frame(self, frame, frame_time):
