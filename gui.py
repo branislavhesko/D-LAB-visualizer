@@ -72,33 +72,42 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.main_widget)
         for index in range(1, len(self.visualizer.data_loader.SIGNAL_KEYS)):
             self.ax3.append(self.ax3[0].twinx())
+        self.plots = []
         self.show()
         self.update()
 
     def process_single_frame(self, frame, frame_time, axes):
-        self.ax1.clear()
-        self.ax1.imshow(frame)
-        self.ax2.clear()
-        self.ax2.imshow(self.visualizer.map.img)
-        self.ax2.plot(self.visualizer.gps_coords["longitude_img"], self.visualizer.gps_coords["latitude_img"])
-        closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
-        self.ax2.plot(self.visualizer.gps_coords["longitude_img"].values[closest_time],
-                 self.visualizer.gps_coords["latitude_img"].values[closest_time],
-                 "xr", markersize=21, mew=2)
-        self.ax2.text(self.visualizer.gps_coords["longitude_img"].values[closest_time] + 20,
-                 self.visualizer.gps_coords["latitude_img"].values[closest_time] - 10,
-                 "Actual position", color="red")
+        if len(self.plots):
+            self.plots[0].set_data(frame)
+            self.plots[1].set_data(self.visualizer.map.img)
+            self.plots[2].set_data(
+                self.visualizer.gps_coords["longitude_img"], self.visualizer.gps_coords["latitude_img"])
+            closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
+            self.plots[3].set_data(self.visualizer.gps_coords["longitude_img"].values[closest_time],
+                                            self.visualizer.gps_coords["latitude_img"].values[closest_time])
+
+        else:
+            self.plots.append(self.ax1.imshow(frame))
+            self.ax2.clear()
+            self.plots.append(self.ax2.imshow(self.visualizer.map.img))
+            self.plots.append(self.ax2.plot(self.visualizer.gps_coords["longitude_img"], self.visualizer.gps_coords["latitude_img"])[0])
+            closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
+            self.plots.append(self.ax2.plot(self.visualizer.gps_coords["longitude_img"].values[closest_time],
+                     self.visualizer.gps_coords["latitude_img"].values[closest_time],
+                     "xr", markersize=21, mew=2)[0])
+
         self.ax2.legend(["GPS route", "Actual position"])
+
         [a.clear() for a in self.ax3]
         tkw = dict(size=4, width=1.5)
-        plts = []
-        signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, 5)
+        plots = []
+        signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, 30)
         for index, car_signal in enumerate(signals):
-            time = np.linspace(frame_time / 1000 - 5, frame_time / 1000 + 5, len(car_signal))
-            plts.append(self.ax3[index].plot(time, car_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            time = np.linspace(frame_time / 1000 - 30, frame_time / 1000 + 30, len(car_signal))
+            plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
             self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
         self.ax3[0].set_xlabel("time [s]")
-        self.ax3[0].legend(plts, self.visualizer.data_loader.SIGNAL_KEYS)
+        self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
 
         self.fig.canvas.draw_idle()
 
