@@ -2,6 +2,7 @@ import cv2
 import sys
 from tqdm import tqdm
 
+import numpy as np
 import seaborn as sns
 from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -21,7 +22,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_widget = QtWidgets.QWidget(self)
 
         self.fig = Figure(tight_layout=True)
-        self.ax1 = self.fig.add_subplot(111)
+        self.ax1 = self.fig.add_subplot(2, 2, 1)
+        self.ax2 = self.fig.add_subplot(2, 2, 2)
+        self.ax3 = [self.fig.add_subplot(2, 2, 3)]
+        self.ax4 = self.fig.add_subplot(2, 2, 4)
         self.ax1.axis("off")
         self.axes=[self.ax1]
         self.canvas = FigureCanvas(self.fig)
@@ -33,9 +37,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._video = cv2.VideoCapture("./data/michalrerucha_3. Recording 7242019 41055 PM_Dikablis "
                                        "Glasses 3_Scene Cam_Original_Eye Tracking Video.mp4")
         self.dropdown1 = QtWidgets.QComboBox()
-        self.dropdown1.addItems(["sex", "time", "smoker"])
+        self.dropdown1.addItems(["30s", "1min", "3min"])
         self.dropdown2 = QtWidgets.QComboBox()
-        self.dropdown2.addItems(["sex", "time", "smoker", "day"])
+        self.dropdown2.addItems(["3s", "10s", "30s"])
         self.dropdown2.setCurrentIndex(2)
         self.next_frame_button = QtWidgets.QPushButton("NEXT FRAME")
         self.next_frame_button.setToolTip("moves to the next frame")
@@ -51,9 +55,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label = QtWidgets.QLabel("A plot:")
 
         self.layout = QtWidgets.QGridLayout(self.main_widget)
-        self.layout.addWidget(QtWidgets.QLabel("Select category for subplots"), 0, 0)
+        self.layout.addWidget(QtWidgets.QLabel("Select time axis for signals"), 0, 0)
         self.layout.addWidget(self.dropdown1, 1, 0)
-        self.layout.addWidget(QtWidgets.QLabel("Select category for markers"), 0, 1)
+        self.layout.addWidget(QtWidgets.QLabel("Select next frame step"), 0, 1)
         self.layout.addWidget(self.dropdown2, 1, 1)
         self.layout.addWidget(self.next_frame_button, 2, 0, 1, 2)
 
@@ -63,19 +67,44 @@ class MainWindow(QtWidgets.QMainWindow):
         self.slider_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.layout.addWidget(self.slider_label, 5, 1)
-        self.video = self.process_video()
         out = self.visualizer.calculate_map_coordinates()
         self.visualizer.load_map(*out)
         self.setCentralWidget(self.main_widget)
+        for index in range(1, len(self.visualizer.data_loader.SIGNAL_KEYS)):
+            self.ax3.append(self.ax3[0].twinx())
         self.show()
         self.update()
 
-    @QtCore.pyqtSlot()
-    def on_button(self):
+    def process_single_frame(self, frame, frame_time, axes):
         self.ax1.clear()
-        self.ax1.imshow(next(self.video))
+        self.ax1.imshow(frame)
+        self.ax2.clear()
+        self.ax2.imshow(self.visualizer.map.img)
+        self.ax2.plot(self.visualizer.gps_coords["longitude_img"], self.visualizer.gps_coords["latitude_img"])
+        closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
+        self.ax2.plot(self.visualizer.gps_coords["longitude_img"].values[closest_time],
+                 self.visualizer.gps_coords["latitude_img"].values[closest_time],
+                 "xr", markersize=21, mew=2)
+        self.ax2.text(self.visualizer.gps_coords["longitude_img"].values[closest_time] + 20,
+                 self.visualizer.gps_coords["latitude_img"].values[closest_time] - 10,
+                 "Actual position", color="red")
+        self.ax2.legend(["GPS route", "Actual position"])
+        [a.clear() for a in self.ax3]
+        tkw = dict(size=4, width=1.5)
+        plts = []
+        signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, 5)
+        for index, car_signal in enumerate(signals):
+            time = np.linspace(frame_time / 1000 - 5, frame_time / 1000 + 5, len(car_signal))
+            plts.append(self.ax3[index].plot(time, car_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
+        self.ax3[0].set_xlabel("time [s]")
+        self.ax3[0].legend(plts, self.visualizer.data_loader.SIGNAL_KEYS)
 
         self.fig.canvas.draw_idle()
+
+    @QtCore.pyqtSlot()
+    def on_button(self):
+        self.process_video()
         self.slider_label.setText(self.get_position_label_text())
 
     @QtCore.pyqtSlot()
@@ -84,10 +113,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print(value)
         self._video.set(cv2.CAP_PROP_POS_FRAMES, value)
         ret, frame = self._video.read()
-        output = self.visualizer.process_single_frame(frame[:, :, ::-1], self._video.get(cv2.CAP_PROP_POS_MSEC), self.axes)
-        self.ax1.clear()
-        self.ax1.imshow(output)
-        self.fig.canvas.draw_idle()
+        self.process_single_frame(frame[:, :, ::-1], self._video.get(cv2.CAP_PROP_POS_MSEC), self.axes)
         self.slider_label.setText(self.get_position_label_text())
 
     def get_position_label_text(self):
@@ -99,21 +125,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def update(self):
 
         colors=["b", "r", "g", "y", "k", "c"]
-        self.ax1.clear()
-        self.ax1.imshow(next(self.video))
-        self.ax1.axis("off")
-        self.fig.canvas.draw_idle()
+        self.process_video()
         self.slider_label.repaint()
 
-
     def process_video(self):
-        for _ in tqdm(range(int(self._video.get(cv2.CAP_PROP_FRAME_COUNT)))):
-            ret, frame = self._video.read()
-            frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
-            if _ % 100 != 0:
-                continue
-            output = self.visualizer.process_single_frame(frame[:, :, ::-1], frame_time, self.axes)
-            yield output
+        actual = self._video.get(cv2.CAP_PROP_POS_FRAMES)
+        self._video.set(cv2.CAP_PROP_POS_FRAMES, actual + 100)
+        ret, frame = self._video.read()
+        frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
+        self.process_single_frame(frame[:, :, ::-1], frame_time, self.axes)
 
 
 if __name__ == '__main__':
