@@ -16,19 +16,20 @@ from dataloader import DataLoader
 
 
 class Visualizer:
+    COLORS = ["red", "green", "blue", "brown", "darkviolet", "skyblue", "black", "orange", "silver", "fuchsia"]
 
     def __init__(self, folder="./data"):
-        self._data_loader = DataLoader()
+        self.data_loader = DataLoader()
         data_file = glob.glob(os.path.join(folder, "*.txt"))[0]
         video_file = glob.glob(os.path.join(folder, "*.mp4"))[0]
-        self._data_loader.load(data_file)
+        self.data_loader.load(data_file)
         self.video = self.load_video(video_file)
         self.gps_coords = None
         self.fig = None
         self.map = None
 
     def calculate_map_coordinates(self):
-        self.gps_coords = self._data_loader.gps_on_time()
+        self.gps_coords = self.data_loader.gps_on_time()
         longitude = 0.9 * (np.amax(self.gps_coords["GPS_Longitude"].values) - np.amin(self.gps_coords["GPS_Longitude"].values))
         latitude = 1. * (np.amax(self.gps_coords["GPS_Latitude"].values) - np.amin(self.gps_coords["GPS_Latitude"].values))
         # TODO: this is not correct
@@ -58,35 +59,32 @@ class Visualizer:
               ('double' if event.dblclick else 'single', event.button,
                event.x, event.y, event.xdata, event.ydata))
 
-    def process_video(self, video_name: str):
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        output_video = cv2.VideoWriter(video_name, fourcc, self.video.get(cv2.CAP_PROP_FPS), (
-            int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
-        i=0
-        for _ in tqdm(range(int(self.video.get(cv2.CAP_PROP_FRAME_COUNT)))):
-            ret, frame = self.video.read()
-            i+=1
-            if i%100!=0:
-                continue
-            frame_time = self.video.get(cv2.CAP_PROP_POS_MSEC)
-            output = self.process_single_frame(frame, frame_time)
-            output_video.write(output)
-        output_video.release()
-
-    def process_single_frame(self, frame, frame_time):
-        fig = Figure(figsize=(16, 9), dpi=120)
+    def process_single_frame(self, frame, frame_time, axes):
+        fig = Figure(figsize=(16, 9), dpi=60)
         ax = fig.add_subplot(2, 2, 1)
         ax.imshow(frame)
         ax2 = fig.add_subplot(2, 2, 2)
-        ax2.imshow(vis.map.img)
-        ax2.plot(vis.gps_coords["longitude_img"], vis.gps_coords["latitude_img"])
-        closest_time = np.argmin(np.abs(vis.gps_coords["rec_time"].values - frame_time / 1000))
-        ax2.plot(vis.gps_coords["longitude_img"].values[closest_time],
-                 vis.gps_coords["latitude_img"].values[closest_time],
-                 "xg", markersize=15)
+        ax2.imshow(self.map.img)
+        ax2.plot(self.gps_coords["longitude_img"], self.gps_coords["latitude_img"])
+        closest_time = np.argmin(np.abs(self.gps_coords["rec_time"].values - frame_time / 1000))
+        ax2.plot(self.gps_coords["longitude_img"].values[closest_time],
+                 self.gps_coords["latitude_img"].values[closest_time],
+                 "xr", markersize=21, mew=2)
+        ax2.text(self.gps_coords["longitude_img"].values[closest_time] + 20,
+                 self.gps_coords["latitude_img"].values[closest_time] - 10,
+                 "Actual position", color="red")
         ax2.legend(["GPS route", "Actual position"])
         ax3 = fig.add_subplot(2, 2, 3)
-        ax3.imshow(vis.map.img)
+        ax_temp = [ax3]
+        tkw = dict(size=4, width=1.5)
+        signals = self.data_loader.get_car_signals_in_time_window(frame_time / 1000, 30)
+        for index, car_signal in enumerate(signals):
+            ax_temp[-1].plot(car_signal.iloc[:, 1], self.COLORS[index])
+            ax_temp[-1].tick_params(axis='y', colors=self.COLORS[index], **tkw)
+            if index < len(signals) - 1:
+                ax_temp.append(ax_temp[0].twinx())
+
+        fig.subplots_adjust(bottom=0.05, top=0.95, left=0.05, right=0.95)
         fig_canvas = FigureCanvas(fig)
         fig_canvas.draw()  # draw the canvas, cache the renderer
         s, (width, height) = fig_canvas.print_to_buffer()
