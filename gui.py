@@ -25,7 +25,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ax1 = self.fig.add_subplot(2, 2, 1)
         self.ax2 = self.fig.add_subplot(2, 2, 2)
         self.ax3 = [self.fig.add_subplot(2, 2, 3)]
-        self.ax4 = self.fig.add_subplot(2, 2, 4)
+        self.ax4 = [self.fig.add_subplot(2, 2, 4)]
         self.ax1.axis("off")
         self.axes=[self.ax1]
         self.canvas = FigureCanvas(self.fig)
@@ -72,6 +72,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.main_widget)
         for index in range(1, len(self.visualizer.data_loader.SIGNAL_KEYS)):
             self.ax3.append(self.ax3[0].twinx())
+
+        for index in range(1, len(self.visualizer.data_loader.bio_signals.sensor)):
+            self.ax4.append(self.ax4[0].twinx())
+
         self.plots = []
         self.show()
         self.update()
@@ -109,6 +113,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ax3[0].set_xlabel("time [s]")
         self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
 
+        [a.clear() for a in self.ax4]
+        bio_plots = []
+        bio_signals = self.visualizer.data_loader.get_biosignals_in_time_window(frame_time / 1000, 30)
+        for index, bio_signal in enumerate(bio_signals):
+            time = np.linspace(frame_time / 1000 - 30, frame_time / 1000 + 30, len(bio_signal))
+            bio_plots.append(self.ax4[index].plot(time, bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index],  **tkw)
+        self.ax4[0].set_xlabel("time [s]")
+        self.ax4[0].legend(bio_plots, self.visualizer.data_loader.bio_signals.sensor)
         self.fig.canvas.draw_idle()
 
     @QtCore.pyqtSlot()

@@ -20,9 +20,9 @@ class Visualizer:
 
     def __init__(self, folder="./data"):
         self.data_loader = DataLoader()
-        data_file = glob.glob(os.path.join(folder, "*.txt"))[0]
+        data_file = sorted(glob.glob(os.path.join(folder, "*.txt")))
         video_file = glob.glob(os.path.join(folder, "*.mp4"))[0]
-        self.data_loader.load(data_file)
+        self.data_loader.load(*data_file)
         self.video = self.load_video(video_file)
         self.gps_coords = None
         self.fig = None
