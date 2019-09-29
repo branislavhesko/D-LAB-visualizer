@@ -16,11 +16,26 @@ tips = sns.load_dataset("tips")
 class MainWindow(QtWidgets.QMainWindow):
     send_fig = QtCore.pyqtSignal(str)
 
+    POSSIBLE_TIME_AXES = {
+        "10s": 10,
+        "30s": 30,
+        "1min": 60,
+        "3min": 180,
+        "10min": 600
+    }
+
+    POSSIBLE_TIMES_BETWEEN_FRAMES = {
+        "3s": 3,
+        "10s": 10,
+        "30s": 30
+    }
+
     def __init__(self):
         super(MainWindow, self).__init__()
 
         self.main_widget = QtWidgets.QWidget(self)
-
+        self.time_interval = self.POSSIBLE_TIME_AXES["1min"]
+        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["30s"]
         self.fig = Figure(tight_layout=True)
         self.ax1 = self.fig.add_subplot(2, 2, 1)
         self.ax2 = self.fig.add_subplot(2, 2, 2)
@@ -37,9 +52,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._video = cv2.VideoCapture("./data/michalrerucha_3. Recording 7242019 41055 PM_Dikablis "
                                        "Glasses 3_Scene Cam_Original_Eye Tracking Video.mp4")
         self.dropdown1 = QtWidgets.QComboBox()
-        self.dropdown1.addItems(["30s", "1min", "3min"])
+        self.dropdown1.addItems(list(self.POSSIBLE_TIME_AXES.keys()))
         self.dropdown2 = QtWidgets.QComboBox()
-        self.dropdown2.addItems(["3s", "10s", "30s"])
+        self.dropdown2.addItems(list(self.POSSIBLE_TIMES_BETWEEN_FRAMES.keys()))
         self.dropdown2.setCurrentIndex(2)
         self.next_frame_button = QtWidgets.QPushButton("NEXT FRAME")
         self.next_frame_button.setToolTip("moves to the next frame")
@@ -50,8 +65,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.slider.setValue(self._video.get(cv2.CAP_PROP_POS_FRAMES))
         self.slider.sliderReleased.connect(self.slider_action)
 
-        self.dropdown1.currentIndexChanged.connect(self.update)
-        self.dropdown2.currentIndexChanged.connect(self.update)
+        self.dropdown1.currentIndexChanged.connect(self._dropdown_time_interval_action)
+        self.dropdown2.currentIndexChanged.connect(self._update)
         self.label = QtWidgets.QLabel("A plot:")
 
         self.layout = QtWidgets.QGridLayout(self.main_widget)
@@ -59,10 +74,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(self.dropdown1, 1, 0)
         self.layout.addWidget(QtWidgets.QLabel("Select next frame step"), 0, 1)
         self.layout.addWidget(self.dropdown2, 1, 1)
+        self.layout.addWidget(QtWidgets.QLabel("Synchronization time"), 0, 2)
+        self.synchronization_text_field = QtWidgets.QLineEdit("0")
+        self.synchronization_text_field.textChanged.connect(self._apply_synchronization_time)
+        self.synchronization_text_field.setMaximumWidth(120)
+        self._synchronization_time = 0
+        self.layout.addWidget(self.synchronization_text_field, 1, 2)
         self.layout.addWidget(self.next_frame_button, 2, 0, 1, 2)
 
-        self.layout.addWidget(self.canvas, 3, 0, 1, 2)
-        self.layout.addWidget(self.slider, 4, 0, 1, 2)
+        self.layout.addWidget(self.canvas, 3, 0, 1, 3)
+        self.layout.addWidget(self.slider, 4, 0, 1, 3)
         self.slider_label = QtWidgets.QLabel(self.get_position_label_text())
         self.slider_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
@@ -79,6 +100,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plots = []
         self.show()
         self.update()
+
+    def _apply_synchronization_time(self):
+        try:
+            self._synchronization_time = float(self.synchronization_text_field.text())
+            self._update()
+        except ValueError as e:
+            pass
+
+    def _dropdown_time_interval_action(self):
+        self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown1.currentText()]
+        self._update()
+
+    def _update(self):
+        frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
+        self._video.set(cv2.CAP_PROP_POS_MSEC, frame_time)
+        ret, frame = self._video.read()
+        self.process_single_frame(frame[:, :, ::-1], frame_time, self.axes)
 
     def process_single_frame(self, frame, frame_time, axes):
         if len(self.plots):
@@ -102,27 +140,37 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ax2.legend(["GPS route", "Actual position"])
 
-        [a.clear() for a in self.ax3]
+        self._plot_can_signals(frame_time)
+        self._plot_biosignals(frame_time + self._synchronization_time)
+
+        self.fig.canvas.draw_idle()
+
+    def _plot_biosignals(self, frame_time):
         tkw = dict(size=4, width=1.5)
-        plots = []
-        signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, 30)
-        for index, car_signal in enumerate(signals):
-            time = np.linspace(frame_time / 1000 - 30, frame_time / 1000 + 30, len(car_signal))
-            plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
-            self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
-        self.ax3[0].set_xlabel("time [s]")
-        self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
 
         [a.clear() for a in self.ax4]
         bio_plots = []
-        bio_signals = self.visualizer.data_loader.get_biosignals_in_time_window(frame_time / 1000, 30)
+        bio_signals = self.visualizer.data_loader.get_biosignals_in_time_window(frame_time / 1000, self.time_interval)
         for index, bio_signal in enumerate(bio_signals):
-            time = np.linspace(frame_time / 1000 - 30, frame_time / 1000 + 30, len(bio_signal))
+            time = np.linspace(frame_time / 1000 - self.time_interval,
+                               frame_time / 1000 + self.time_interval, len(bio_signal))
             bio_plots.append(self.ax4[index].plot(time, bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
             self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index],  **tkw)
         self.ax4[0].set_xlabel("time [s]")
         self.ax4[0].legend(bio_plots, self.visualizer.data_loader.bio_signals.sensor)
-        self.fig.canvas.draw_idle()
+
+    def _plot_can_signals(self, frame_time):
+        [a.clear() for a in self.ax3]
+        tkw = dict(size=4, width=1.5)
+        plots = []
+        signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, self.time_interval)
+        for index, car_signal in enumerate(signals):
+            time = np.linspace(frame_time / 1000 - self.time_interval,
+                               frame_time / 1000 + self.time_interval, len(car_signal))
+            plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
+        self.ax3[0].set_xlabel("time [s]")
+        self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
 
     @QtCore.pyqtSlot()
     def on_button(self):
@@ -152,7 +200,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def process_video(self):
         actual = self._video.get(cv2.CAP_PROP_POS_FRAMES)
-        self._video.set(cv2.CAP_PROP_POS_FRAMES, actual + 100)
+        self._video.set(cv2.CAP_PROP_POS_FRAMES,
+                        actual + self.time_between_frames * self._video.get(cv2.CAP_PROP_FPS))
         ret, frame = self._video.read()
         frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
         self.process_single_frame(frame[:, :, ::-1], frame_time, self.axes)
