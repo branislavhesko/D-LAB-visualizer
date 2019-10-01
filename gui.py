@@ -17,6 +17,9 @@ class MainWindow(QtWidgets.QMainWindow):
     send_fig = QtCore.pyqtSignal(str)
 
     POSSIBLE_TIME_AXES = {
+        "1s": 1,
+        "2s": 2,
+        "5s": 5,
         "10s": 10,
         "30s": 30,
         "1min": 60,
@@ -167,7 +170,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for index, car_signal in enumerate(signals):
             time = np.linspace(frame_time / 1000 - self.time_interval,
                                frame_time / 1000 + self.time_interval, len(car_signal))
-            plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1],
+                                              self.visualizer.COLORS[index], linewidth=0.5, mew=0.5)[0])
             self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
         self.ax3[0].set_xlabel("time [s]")
         self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
