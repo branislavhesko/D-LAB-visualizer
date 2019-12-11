@@ -55,9 +55,11 @@ class DataLoader:
                 np.abs(car_signal["rec_time"].values - central_time) < interval, :])
         return signals_in_time_window
 
-    def get_biosignals_in_time_window(self, central_time, interval=30):
+    def get_biosignals_in_time_window(self, central_time, interval=30, signal_names=None):
+        if signal_names is None:
+            signal_names == self.bio_signals.sensor
         bio_signals = []
-        for sensor in self.bio_signals.sensor:
+        for sensor in signal_names:
             bio_signals.append(self.bio_signals.data.loc[
                                    np.abs(self.bio_signals.data["rec_time"].values - central_time) < interval, ("rec_time", sensor)])
         return bio_signals

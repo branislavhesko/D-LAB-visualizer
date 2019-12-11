@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from visualizer import Visualizer
+from checkable_combobox import CheckableComboBox
 
 
 tips = sns.load_dataset("tips")
@@ -33,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         "30s": 30
     }
 
-    def __init__(self):
+    def __init__(self, video_file: str):
         super(MainWindow, self).__init__()
 
         self.main_widget = QtWidgets.QWidget(self)
@@ -45,15 +46,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ax3 = [self.fig.add_subplot(2, 2, 3)]
         self.ax4 = [self.fig.add_subplot(2, 2, 4)]
         self.ax1.axis("off")
-        self.axes=[self.ax1]
+        self.axes = [self.ax1]
         self.canvas = FigureCanvas(self.fig)
 
-        self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding, 
+        self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                   QtWidgets.QSizePolicy.Expanding)
         self.canvas.updateGeometry()
         self.visualizer = Visualizer()
-        self._video = cv2.VideoCapture("./data/michalrerucha_3. Recording 7242019 41055 PM_Dikablis "
-                                       "Glasses 3_Scene Cam_Original_Eye Tracking Video.mp4")
+        self._video = cv2.VideoCapture(video_file)
         self.dropdown1 = QtWidgets.QComboBox()
         self.dropdown1.addItems(list(self.POSSIBLE_TIME_AXES.keys()))
         self.dropdown2 = QtWidgets.QComboBox()
@@ -82,6 +82,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.synchronization_text_field.textChanged.connect(self._apply_synchronization_time)
         self.synchronization_text_field.setMaximumWidth(120)
         self._synchronization_time = 0
+        self._which_signal_to_plot = CheckableComboBox()
+
+        self.layout.addWidget(self._which_signal_to_plot, 2, 2)
         self.layout.addWidget(self.synchronization_text_field, 1, 2)
         self.layout.addWidget(self.next_frame_button, 2, 0, 1, 2)
 
@@ -100,15 +103,20 @@ class MainWindow(QtWidgets.QMainWindow):
         for index in range(1, len(self.visualizer.data_loader.bio_signals.sensor)):
             self.ax4.append(self.ax4[0].twinx())
 
+        for sensor in self.visualizer.data_loader.bio_signals.sensor:
+            self._which_signal_to_plot.addItem(sensor)
+
         self.plots = []
+        self._checked_sensors = []
+
         self.show()
         self.update()
 
     def _apply_synchronization_time(self):
         try:
-            self._synchronization_time = float(self.synchronization_text_field.text())
+            self._synchronization_time = float(self.synchronization_text_field.text()) * 1000.
             self._update()
-        except ValueError as e:
+        except ValueError:
             pass
 
     def _dropdown_time_interval_action(self):
@@ -129,13 +137,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.visualizer.gps_coords["longitude_img"], self.visualizer.gps_coords["latitude_img"])
             closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
             self.plots[3].set_data(self.visualizer.gps_coords["longitude_img"].values[closest_time],
-                                            self.visualizer.gps_coords["latitude_img"].values[closest_time])
+                                   self.visualizer.gps_coords["latitude_img"].values[closest_time])
 
         else:
             self.plots.append(self.ax1.imshow(frame))
             self.ax2.clear()
             self.plots.append(self.ax2.imshow(self.visualizer.map.img))
-            self.plots.append(self.ax2.plot(self.visualizer.gps_coords["longitude_img"], self.visualizer.gps_coords["latitude_img"])[0])
+            self.plots.append(self.ax2.plot(self.visualizer.gps_coords["longitude_img"],
+                                            self.visualizer.gps_coords["latitude_img"])[0])
             closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
             self.plots.append(self.ax2.plot(self.visualizer.gps_coords["longitude_img"].values[closest_time],
                      self.visualizer.gps_coords["latitude_img"].values[closest_time],
@@ -152,8 +161,16 @@ class MainWindow(QtWidgets.QMainWindow):
         tkw = dict(size=4, width=1.5)
 
         [a.clear() for a in self.ax4]
+        for i in range(len(self.visualizer.data_loader.bio_signals.sensor)):
+            item = self._which_signal_to_plot.model().item(i, 0)
+            if item.checkState() == QtCore.Qt.Checked and not item.text() in self._checked_sensors:
+                self._checked_sensors.append(item.text())
+            elif item.checkState() == QtCore.Qt.Unchecked:
+                if item.text() in self._checked_sensors:
+                    self._checked_sensors.remove(item.text())
         bio_plots = []
-        bio_signals = self.visualizer.data_loader.get_biosignals_in_time_window(frame_time / 1000, self.time_interval)
+        bio_signals = self.visualizer.data_loader.get_biosignals_in_time_window(
+            frame_time / 1000, self.time_interval, self._checked_sensors)
         for index, bio_signal in enumerate(bio_signals):
             time = np.linspace(frame_time / 1000 - self.time_interval,
                                frame_time / 1000 + self.time_interval, len(bio_signal))
@@ -213,5 +230,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    win = MainWindow()
+    win = MainWindow("./data/michalrerucha_3. Recording 7242019 41055 PM_Dikablis "
+                     "Glasses 3_Scene Cam_Original_Eye Tracking Video.mp4")
     sys.exit(app.exec_())
