@@ -3,15 +3,13 @@ import sys
 from tqdm import tqdm
 
 import numpy as np
-import seaborn as sns
+import matplotlib
+matplotlib.use("Qt5Agg")
 from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from visualizer import Visualizer
 from checkable_combobox import CheckableComboBox
-
-
-tips = sns.load_dataset("tips")
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -39,7 +37,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.main_widget = QtWidgets.QWidget(self)
         self.time_interval = self.POSSIBLE_TIME_AXES["1min"]
-        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["30s"]
+        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["3s"]
         self.fig = Figure(tight_layout=True)
         self.ax1 = self.fig.add_subplot(2, 2, 1)
         self.ax2 = self.fig.add_subplot(2, 2, 2)
@@ -230,6 +228,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    win = MainWindow("./data/michalrerucha_3. Recording 7242019 41055 PM_Dikablis "
-                     "Glasses 3_Scene Cam_Original_Eye Tracking Video.mp4")
+    import glob
+    win = MainWindow(glob.glob("./data/*.mp4")[0])
     sys.exit(app.exec_())

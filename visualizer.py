@@ -4,11 +4,11 @@ import os
 import cv2
 import numpy as np
 import matplotlib
+matplotlib.use("Qt5Agg")
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-matplotlib.use("Qt5Agg")
 from matplotlib import pyplot as plt
 import smopy
 
@@ -21,9 +21,7 @@ class Visualizer:
     def __init__(self, folder="./data"):
         self.data_loader = DataLoader()
         data_file = sorted(glob.glob(os.path.join(folder, "*.txt")))
-        video_file = glob.glob(os.path.join(folder, "*.mp4"))[0]
         self.data_loader.load(*data_file)
-        self.video = self.load_video(video_file)
         self.gps_coords = None
         self.fig = None
         self.map = None
@@ -49,10 +47,6 @@ class Visualizer:
             gps_in_img_coords.append((x, y))
         self.gps_coords["longitude_img"] = np.array(gps_in_img_coords)[:, 0]
         self.gps_coords["latitude_img"] = np.array(gps_in_img_coords)[:, 1]
-
-    def load_video(self, video_file):
-        video = cv2.VideoCapture(video_file)
-        return video
 
     def on_click(self, event):
         print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
