@@ -11,7 +11,6 @@ class DataLoader:
         "Can_Details Lane (0x669)_Distance to Right Lane",
         "Can_Car Signals (0x760)_Speed"]
 
-
     def __init__(self):
         self.data = None
         self._gps_signals = None
@@ -61,7 +60,8 @@ class DataLoader:
         bio_signals = []
         for sensor in signal_names:
             bio_signals.append(self.bio_signals.data.loc[
-                                   np.abs(self.bio_signals.data["rec_time"].values - central_time) < interval, ("rec_time", sensor)])
+                                   np.abs(self.bio_signals.data["rec_time"].values - central_time) < interval,
+                                   ("rec_time", sensor)])
         return bio_signals
 
     @staticmethod

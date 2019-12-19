@@ -28,8 +28,10 @@ class Visualizer:
 
     def calculate_map_coordinates(self):
         self.gps_coords = self.data_loader.gps_on_time()
-        longitude = 0.9 * (np.amax(self.gps_coords["GPS_Longitude"].values) - np.amin(self.gps_coords["GPS_Longitude"].values))
-        latitude = 1. * (np.amax(self.gps_coords["GPS_Latitude"].values) - np.amin(self.gps_coords["GPS_Latitude"].values))
+        longitude = 0.9 * (np.amax(self.gps_coords["GPS_Longitude"].values) - np.amin(
+            self.gps_coords["GPS_Longitude"].values))
+        latitude = 1. * (np.amax(self.gps_coords["GPS_Latitude"].values) - np.amin(
+            self.gps_coords["GPS_Latitude"].values))
         # TODO: this is not correct
         lowest_point = (np.amin(self.gps_coords["GPS_Longitude"].values) + 0.1 * longitude, np.amin(
             self.gps_coords["GPS_Latitude"].values))
@@ -40,7 +42,8 @@ class Visualizer:
         self.fig = plt.figure("GPS", figsize=(20, 8), dpi=300)
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
 
-        self.map = smopy.Map((lowest_point[1], lowest_point[0], lowest_point[1] + latitude, lowest_point[0] + longitude), z=15)
+        self.map = smopy.Map((lowest_point[1], lowest_point[0], lowest_point[1] + latitude,
+                              lowest_point[0] + longitude), z=15)
         gps_in_img_coords = []
         for coord in range(self.gps_coords.shape[0]):
             x, y = self.map.to_pixels(*self.gps_coords[["GPS_Longitude", "GPS_Latitude"]].iloc[coord, :].values[::-1])
