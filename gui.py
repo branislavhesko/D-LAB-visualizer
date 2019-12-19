@@ -9,6 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from visualizer import Visualizer
+from annotator_window import AnnotatorWindow
 from checkable_combobox import CheckableComboBox
 
 
@@ -36,6 +37,8 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__()
 
         self.main_widget = QtWidgets.QWidget(self)
+        self.video_file = video_file
+        self.annotator = AnnotatorWindow()
         self.time_interval = self.POSSIBLE_TIME_AXES["1min"]
         self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["3s"]
         self.fig = Figure(tight_layout=True)
@@ -58,6 +61,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dropdown2.addItems(list(self.POSSIBLE_TIMES_BETWEEN_FRAMES.keys()))
         self.dropdown2.setCurrentIndex(2)
         self.next_frame_button = QtWidgets.QPushButton("NEXT FRAME")
+        self.annotator_button = QtWidgets.QPushButton("ANNOTATE")
+        self.annotator_button.setToolTip("runs annotator window")
+        self.annotator_button.clicked.connect(self._annotate)
         self.next_frame_button.setToolTip("moves to the next frame")
         self.next_frame_button.clicked.connect(self.on_button)
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -84,7 +90,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.layout.addWidget(self._which_signal_to_plot, 2, 2)
         self.layout.addWidget(self.synchronization_text_field, 1, 2)
-        self.layout.addWidget(self.next_frame_button, 2, 0, 1, 2)
+        self.layout.addWidget(self.next_frame_button, 2, 0, 1, 1)
+        self.layout.addWidget(self.annotator_button, 2, 1, 1, 1)
 
         self.layout.addWidget(self.canvas, 3, 0, 1, 3)
         self.layout.addWidget(self.slider, 4, 0, 1, 3)
@@ -109,6 +116,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.show()
         self.update()
+
+    def _annotate(self):
+        frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC) / 1000.
+        time_utc = self.visualizer.data_loader.get_time_utc(frame_time)
+        self.annotator.run(self.video_file, time_utc)
 
     def _apply_synchronization_time(self):
         try:

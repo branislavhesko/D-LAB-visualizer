@@ -9,7 +9,7 @@ class DataLoader:
     SIGNAL_KEYS = [
         "Can_Details Lane (0x669)_Distance to Left Lane",
         "Can_Details Lane (0x669)_Distance to Right Lane",
-        "Can_Car Signals (0x760)_Speed"]
+        "Can_Car Signals (0x760)_Speed", "UTC"]
 
     def __init__(self):
         self.data = None
@@ -54,9 +54,13 @@ class DataLoader:
                 np.abs(car_signal["rec_time"].values - central_time) < interval, :])
         return signals_in_time_window
 
+    def get_time_utc(self, time):
+        return self._car_signals[-1].iloc[np.argmin(
+            np.abs(self._car_signals[-1]["rec_time"].values - time)), 1]
+
     def get_biosignals_in_time_window(self, central_time, interval=30, signal_names=None):
         if signal_names is None:
-            signal_names == self.bio_signals.sensor
+            signal_names = self.bio_signals.sensor
         bio_signals = []
         for sensor in signal_names:
             bio_signals.append(self.bio_signals.data.loc[
