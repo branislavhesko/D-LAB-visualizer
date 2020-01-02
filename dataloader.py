@@ -40,8 +40,6 @@ class DataLoader:
     def car_signals_on_time(self):
         car_signals = []
         for key in tqdm(self.SIGNAL_KEYS):
-            if key == "UTC":
-                continue
             out = self.data.loc[:, ["rec_time", key]]
             out = out[pd.notnull(out.loc[:, key])].copy()
             out["rec_time"] = out["rec_time"].apply(self.transform)
@@ -51,7 +49,7 @@ class DataLoader:
     # TODO: process all signals and store them in a dict...
     def get_car_signals_in_time_window(self, central_time, interval=30):
         signals_in_time_window = []
-        for car_signal in self._car_signals:
+        for car_signal in self._car_signals[:-1]:
             signals_in_time_window.append(car_signal.iloc[
                 np.abs(car_signal["rec_time"].values - central_time) < interval, :])
         return signals_in_time_window
