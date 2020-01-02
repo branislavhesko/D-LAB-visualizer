@@ -7,6 +7,7 @@ import matplotlib
 matplotlib.use("Qt5Agg")
 from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
+from matplotlib import pyplot, ticker
 from PyQt5 import QtCore, QtGui, QtWidgets
 from visualizer import Visualizer
 from annotator_window import AnnotatorWindow
@@ -17,6 +18,7 @@ class MainWindow(QtWidgets.QMainWindow):
     send_fig = QtCore.pyqtSignal(str)
 
     POSSIBLE_TIME_AXES = {
+        "0.5s": 0.5,
         "1s": 1,
         "2s": 2,
         "5s": 5,
@@ -28,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow):
     }
 
     POSSIBLE_TIMES_BETWEEN_FRAMES = {
+        "1s": 1,
         "3s": 3,
         "10s": 10,
         "30s": 30
@@ -35,7 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, video_file: str):
         super(MainWindow, self).__init__()
-
+        pyplot.grid(True)
         self.main_widget = QtWidgets.QWidget(self)
         self.video_file = video_file
         self.annotator = AnnotatorWindow()
@@ -186,6 +189,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                frame_time / 1000 + self.time_interval, len(bio_signal))
             bio_plots.append(self.ax4[index].plot(time, bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
             self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index],  **tkw)
+            xticks = ticker.MaxNLocator(20)
+            self.ax4[index].xaxis.set_major_locator(xticks)
         self.ax4[0].set_xlabel("time [s]")
         self.ax4[0].legend(bio_plots, self.visualizer.data_loader.bio_signals.sensor)
 
@@ -200,6 +205,8 @@ class MainWindow(QtWidgets.QMainWindow):
             plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1],
                                               self.visualizer.COLORS[index], linewidth=0.5, mew=0.5)[0])
             self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
+            xticks = ticker.MaxNLocator(20)
+            self.ax3[index].xaxis.set_major_locator(xticks)
         self.ax3[0].set_xlabel("time [s]")
         self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
 
@@ -207,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def on_button(self):
         self.process_video()
         self.slider_label.setText(self.get_position_label_text())
+        self.slider.setValue(self._video.get(cv2.CAP_PROP_POS_FRAMES))
 
     @QtCore.pyqtSlot()
     def slider_action(self):

@@ -40,6 +40,8 @@ class DataLoader:
     def car_signals_on_time(self):
         car_signals = []
         for key in tqdm(self.SIGNAL_KEYS):
+            if key == "UTC":
+                continue
             out = self.data.loc[:, ["rec_time", key]]
             out = out[pd.notnull(out.loc[:, key])].copy()
             out["rec_time"] = out["rec_time"].apply(self.transform)
