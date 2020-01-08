@@ -20,8 +20,7 @@ class Visualizer:
 
     def __init__(self, folder="./data"):
         self.data_loader = DataLoader()
-        data_file = sorted(glob.glob(os.path.join(folder, "*.txt")))
-        self.data_loader.load(*data_file)
+        self.data_loader.load()
         self.gps_coords = None
         self.fig = None
         self.map = None

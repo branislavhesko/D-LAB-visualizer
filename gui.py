@@ -9,6 +9,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib import pyplot, ticker
 from PyQt5 import QtCore, QtGui, QtWidgets
+
+from config import Configuration
 from visualizer import Visualizer
 from annotator_window import AnnotatorWindow
 from checkable_combobox import CheckableComboBox
@@ -249,5 +251,5 @@ class MainWindow(QtWidgets.QMainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     import glob
-    win = MainWindow(glob.glob("./data/*.mp4")[0])
+    win = MainWindow(Configuration.VIDEO_FILE)
     sys.exit(app.exec_())
