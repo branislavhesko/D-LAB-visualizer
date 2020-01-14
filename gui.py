@@ -62,6 +62,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._video = cv2.VideoCapture(video_file)
         self.dropdown1 = QtWidgets.QComboBox()
         self.dropdown1.addItems(list(self.POSSIBLE_TIME_AXES.keys()))
+        self.dropdown1.setCurrentIndex(0)
         self.dropdown2 = QtWidgets.QComboBox()
         self.dropdown2.addItems(list(self.POSSIBLE_TIMES_BETWEEN_FRAMES.keys()))
         self.dropdown2.setCurrentIndex(2)
@@ -78,7 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.slider.sliderReleased.connect(self.slider_action)
 
         self.dropdown1.currentIndexChanged.connect(self._dropdown_time_interval_action)
-        self.dropdown2.currentIndexChanged.connect(self._update)
+        self.dropdown2.currentIndexChanged.connect(self._dropdown2_time_interval_action)
         self.label = QtWidgets.QLabel("A plot:")
 
         self.layout = QtWidgets.QGridLayout(self.main_widget)
@@ -136,6 +137,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _dropdown_time_interval_action(self):
         self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown1.currentText()]
+        self._update()
+
+    def _dropdown2_time_interval_action(self):
+        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES[self.dropdown2.currentText()]
         self._update()
 
     def _update(self):
