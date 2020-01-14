@@ -35,7 +35,11 @@ class MainWindow(QtWidgets.QMainWindow):
         "1s": 1,
         "3s": 3,
         "10s": 10,
-        "30s": 30
+        "30s": 30,
+        "1min": 60,
+        "2min": 120,
+        "5min": 300,
+        "10min": 600
     }
 
     def __init__(self, video_file: str):
