@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib import pyplot, ticker
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from config import Configuration
+from config import Configuration, CanSignals
 from visualizer import Visualizer
 from annotator_window import AnnotatorWindow
 from checkable_combobox import CheckableComboBox
@@ -107,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
         out = self.visualizer.calculate_map_coordinates()
         self.visualizer.load_map(*out)
         self.setCentralWidget(self.main_widget)
-        for index in range(1, len(self.visualizer.data_loader.SIGNAL_KEYS)):
+        for index in range(1, len(CanSignals.SIGNAL_KEYS)):
             self.ax3.append(self.ax3[0].twinx())
 
         for index in range(1, len(self.visualizer.data_loader.bio_signals.sensor)):
@@ -210,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
             xticks = ticker.MaxNLocator(20)
             self.ax3[index].xaxis.set_major_locator(xticks)
         self.ax3[0].set_xlabel("time [s]")
-        self.ax3[0].legend(plots, self.visualizer.data_loader.SIGNAL_KEYS)
+        self.ax3[0].legend(plots, CanSignals.SIGNAL_KEYS)
 
     @QtCore.pyqtSlot()
     def on_button(self):

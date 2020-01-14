@@ -3,15 +3,10 @@ import pandas as pd
 from tqdm import tqdm
 
 from biosignalsplux_loader import BiosignalsPluxLoader
-from config import Configuration
+from config import Configuration, CanSignals
 
 
 class DataLoader:
-    SIGNAL_KEYS = [
-        "Can_Details Lane (0x669)_Distance to Left Lane",
-        "Can_Details Lane (0x669)_Distance to Right Lane",
-        "Can_Car Signals (0x760)_Speed", "UTC"]
-
     def __init__(self):
         self.data = None
         self._gps_signals = None
@@ -40,7 +35,7 @@ class DataLoader:
 
     def car_signals_on_time(self):
         car_signals = []
-        for key in tqdm(self.SIGNAL_KEYS):
+        for key in tqdm(CanSignals.SIGNAL_KEYS):
             out = self.data.loc[:, ["rec_time", key]]
             out = out[pd.notnull(out.loc[:, key])].copy()
             out["rec_time"] = out["rec_time"].apply(self.transform)
@@ -89,5 +84,5 @@ if __name__ == "__main__":
 
     loader.load(file, bioo_file)
     from matplotlib import pyplot as plt
-    plt.plot(loader.get_car_signals_in_time_window(100, 30)[DataLoader.SIGNAL_KEYS[0]])
+    plt.plot(loader.get_car_signals_in_time_window(100, 30)[CanSignals.SIGNAL_KEYS[0]])
     plt.show()
