@@ -200,6 +200,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                frame_time / 1000 + self.time_interval, len(bio_signal))
             bio_plots.append(self.ax4[index].plot(time, bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
             self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index],  **tkw)
+            self.ax4[index].set_xlim(time.min(), time.max())
             xticks = ticker.MaxNLocator(20)
             self.ax4[index].xaxis.set_major_locator(xticks)
         self.ax4[0].set_xlabel("time [s]")
@@ -216,6 +217,7 @@ class MainWindow(QtWidgets.QMainWindow):
             plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1],
                                               self.visualizer.COLORS[index], linewidth=0.5, mew=0.5)[0])
             self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
+            self.ax3[index].set_xlim(time.min(), time.max())
             xticks = ticker.MaxNLocator(20)
             self.ax3[index].xaxis.set_major_locator(xticks)
         self.ax3[0].set_xlabel("time [s]")
