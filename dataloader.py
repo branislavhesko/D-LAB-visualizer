@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from biosignalsplux_loader import BiosignalsPluxLoader
+from biosignalsplux_loader import BiosignalsPluxLoader, BiosignalsPluxNew
 from config import Configuration, CanSignals
 
 
@@ -17,7 +17,7 @@ class DataLoader:
         self.data = pd.read_csv(Configuration.CAN_SIGNAL_FILE, delimiter="\t")
         self._gps_signals = self.gps_on_time()
         self._car_signals = self.car_signals_on_time()
-        self.bio_signals = BiosignalsPluxLoader()
+        self.bio_signals = BiosignalsPluxNew()
         self._load_biosignals(Configuration.BIOSIGNAL_FILE)
         print(self.data.columns)
 

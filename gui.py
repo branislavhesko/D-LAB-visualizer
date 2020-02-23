@@ -174,7 +174,7 @@ class MainWindow(QtWidgets.QMainWindow):
                      self.visualizer.gps_coords["latitude_img"].values[closest_time],
                      "xr", markersize=21, mew=2)[0])
 
-        self.ax2.legend(["GPS route", "Actual position"])
+        self.ax2.legend(["GPS route", "Actual position"], loc="upper right")
 
         self._plot_can_signals(frame_time)
         self._plot_biosignals(frame_time + self._synchronization_time)
@@ -204,7 +204,7 @@ class MainWindow(QtWidgets.QMainWindow):
             xticks = ticker.MaxNLocator(20)
             self.ax4[index].xaxis.set_major_locator(xticks)
         self.ax4[0].set_xlabel("time [s]")
-        self.ax4[0].legend(bio_plots, self.visualizer.data_loader.bio_signals.sensor)
+        self.ax4[0].legend(bio_plots, self.visualizer.data_loader.bio_signals.sensor, loc="upper right")
 
     def _plot_can_signals(self, frame_time):
         [a.clear() for a in self.ax3]
@@ -221,7 +221,7 @@ class MainWindow(QtWidgets.QMainWindow):
             xticks = ticker.MaxNLocator(20)
             self.ax3[index].xaxis.set_major_locator(xticks)
         self.ax3[0].set_xlabel("time [s]")
-        self.ax3[0].legend(plots, CanSignals.SIGNAL_KEYS)
+        self.ax3[0].legend(plots, CanSignals.SIGNAL_KEYS, loc="upper right")
 
     @QtCore.pyqtSlot()
     def on_button(self):

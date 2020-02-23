@@ -19,7 +19,7 @@ class BiosignalsPluxLoader:
     def normalize_data(self):
         resulutions = self.header["resolution"]
         for index, resulution in enumerate(resulutions[-1::-1]):
-            self.data.iloc[:, -1 - index] = self.data.iloc[:, -1 - index] / float(2 ** resulution)
+            self.data.iloc[:, -2 - index] = self.data.iloc[:, -2 - index] / float(2 ** resulution)
 
     def _load_header(self):
         with open(self.filename, "r") as f:
@@ -55,6 +55,27 @@ class BiosignalsPluxLoader:
     def __str__(self):
         formatted_dict = "HEADER: \n" + "\n".join(["\t"+ key + " : " + str(self.header[key]) for key in self.header.keys()])
         return "DEVICE: " + self.device_name + "\n" + formatted_dict
+
+
+class BiosignalsPluxNew(BiosignalsPluxLoader):
+
+    def __init__(self):
+        super().__init__()
+    
+    def _load_header(self):
+        with open(self.filename, "r") as f:
+            header_line = f.readlines()[0]
+
+        header = eval(header_line)
+        self.device_name = list(header.keys())[0]
+        self.header = header
+        
+    def _load_data(self):
+        self.data = pd.read_csv(self.filename, delimiter="\t", skiprows=3, names=self.columns + ["rec_time"])
+        self.data.columns = self.columns[:-len(self.sensor)] + self.sensor + ["rec_time"]
+        
+    def generate_rec_time(self):
+        pass
 
 
 if __name__ == "__main__":
