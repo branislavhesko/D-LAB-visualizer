@@ -196,11 +196,11 @@ class MainWindow(QtWidgets.QMainWindow):
         bio_signals = self.visualizer.data_loader.get_biosignals_in_time_window(
             frame_time / 1000, self.time_interval, self._checked_sensors)
         for index, bio_signal in enumerate(bio_signals):
-            time = np.linspace(frame_time / 1000 - self.time_interval,
-                               frame_time / 1000 + self.time_interval, len(bio_signal))
-            bio_plots.append(self.ax4[index].plot(time, bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            time = [frame_time / 1000 - self.time_interval,
+                    frame_time / 1000 + self.time_interval]
+            bio_plots.append(self.ax4[index].plot(bio_signal.iloc[:, 0], bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
             self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index],  **tkw)
-            self.ax4[index].set_xlim(time.min(), time.max())
+            self.ax4[index].set_xlim(time[0], time[1])
             xticks = ticker.MaxNLocator(20)
             self.ax4[index].xaxis.set_major_locator(xticks)
         self.ax4[0].set_xlabel("time [s]")
@@ -212,12 +212,12 @@ class MainWindow(QtWidgets.QMainWindow):
         plots = []
         signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, self.time_interval)
         for index, car_signal in enumerate(signals):
-            time = np.linspace(frame_time / 1000 - self.time_interval,
-                               frame_time / 1000 + self.time_interval, len(car_signal))
-            plots.append(self.ax3[index].plot(time, car_signal.iloc[:, 1],
+            time = [frame_time / 1000 - self.time_interval,
+                    frame_time / 1000 + self.time_interval]
+            plots.append(self.ax3[index].plot(car_signal.iloc[:, 0], car_signal.iloc[:, 1],
                                               self.visualizer.COLORS[index], linewidth=0.5, mew=0.5)[0])
             self.ax3[index].tick_params(axis='y', colors=self.visualizer.COLORS[index], **tkw)
-            self.ax3[index].set_xlim(time.min(), time.max())
+            self.ax3[index].set_xlim(time[0], time[1])
             xticks = ticker.MaxNLocator(20)
             self.ax3[index].xaxis.set_major_locator(xticks)
         self.ax3[0].set_xlabel("time [s]")
