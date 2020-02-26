@@ -57,8 +57,7 @@ class BiosignalsPluxLoader:
         return "DEVICE: " + self.device_name + "\n" + formatted_dict
 
 
-class BiosignalsPluxNew(BiosignalsPluxLoader):
-
+class BiosignalsPluxLoaderNew(BiosignalsPluxLoader):
     def __init__(self):
         super().__init__()
     
