@@ -7,6 +7,5 @@ class Configuration:
 
 class CanSignals:
     SIGNAL_KEYS = [
-        "Can_Details Lane (0x669)_Distance to Left Lane",
-        "Can_Details Lane (0x669)_Distance to Right Lane",
+        "Can_Car Signals (0x760)_Brakes",
         "Can_Car Signals (0x760)_Speed", "UTC"]

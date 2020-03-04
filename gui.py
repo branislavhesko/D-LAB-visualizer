@@ -44,6 +44,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, video_file: str):
         super(MainWindow, self).__init__()
+        self.frame_time = 0
         pyplot.grid(True)
         self.main_widget = QtWidgets.QWidget(self)
         self.video_file = video_file
@@ -148,10 +149,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._update()
 
     def _update(self):
-        frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
-        self._video.set(cv2.CAP_PROP_POS_MSEC, frame_time)
+        self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
+        self._video.set(cv2.CAP_PROP_POS_MSEC, self.frame_time)
         ret, frame = self._video.read()
-        self.process_single_frame(frame[:, :, ::-1], frame_time, self.axes)
+        self.process_single_frame(frame[:, :, ::-1], self.frame_time, self.axes)
 
     def process_single_frame(self, frame, frame_time, axes):
         if len(self.plots):
@@ -235,14 +236,16 @@ class MainWindow(QtWidgets.QMainWindow):
         print(value)
         self._video.set(cv2.CAP_PROP_POS_FRAMES, value)
         ret, frame = self._video.read()
-        self.process_single_frame(frame[:, :, ::-1], self._video.get(cv2.CAP_PROP_POS_MSEC), self.axes)
+        self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
+        self.process_single_frame(frame[:, :, ::-1], self.frame_time, self.axes)
         self.slider_label.setText(self.get_position_label_text())
 
     def get_position_label_text(self):
-        return "Video position: {} / {}".format(
+        return "Video position: {} / {}, CAN position: {:.2f}, BIOSIGNAL position: {:.2f}".format(
             self.visualizer.data_loader.format_time_to_hours(self._video.get(cv2.CAP_PROP_POS_MSEC) / 1000),
             self.visualizer.data_loader.format_time_to_hours(self._video.get(
-                cv2.CAP_PROP_FRAME_COUNT) / self._video.get(cv2.CAP_PROP_FPS)))
+                cv2.CAP_PROP_FRAME_COUNT) / self._video.get(cv2.CAP_PROP_FPS)),
+            self.frame_time / 1000., (self.frame_time + self._synchronization_time) / 1000.)
 
     def update(self):
 
@@ -255,8 +258,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._video.set(cv2.CAP_PROP_POS_FRAMES,
                         actual + self.time_between_frames * self._video.get(cv2.CAP_PROP_FPS))
         ret, frame = self._video.read()
-        frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
-        self.process_single_frame(frame[:, :, ::-1], frame_time, self.axes)
+        self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
+        self.process_single_frame(frame[:, :, ::-1], self.frame_time, self.axes)
 
 
 if __name__ == '__main__':
