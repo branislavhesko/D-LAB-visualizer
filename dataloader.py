@@ -14,7 +14,7 @@ class DataLoader:
         self.bio_signals = None
 
     def load(self):
-        self.data = pd.read_csv(Configuration.CAN_SIGNAL_FILE, delimiter="\t")
+        self.data = pd.read_csv(Configuration.CAN_SIGNAL_FILE, delimiter=",")
         self._gps_signals = self.gps_on_time()
         self._car_signals = self.car_signals_on_time()
         self.bio_signals = BiosignalsPluxLoaderNew() if \
@@ -31,7 +31,7 @@ class DataLoader:
         keys = "rec_time", "GPS_Altitude", "GPS_Latitude", "GPS_Longitude", "GPS_Time"
         gps_data = self.data.loc[:, keys]
         gps_data = gps_data[pd.notnull(gps_data.loc[:, "GPS_Time"])].copy()
-        gps_data["rec_time"] = gps_data["rec_time"].apply(self.transform)
+        gps_data["rec_time"] = gps_data["rec_time"] / 1000.
         return gps_data
 
     def car_signals_on_time(self):
@@ -39,7 +39,7 @@ class DataLoader:
         for key in tqdm(CanSignals.SIGNAL_KEYS):
             out = self.data.loc[:, ["rec_time", key]]
             out = out[pd.notnull(out.loc[:, key])].copy()
-            out["rec_time"] = out["rec_time"].apply(self.transform)
+            out["rec_time"] = out["rec_time"] / 1000.
             car_signals.append(out)
         return car_signals
 

@@ -1,7 +1,7 @@
 class Configuration:
     BIOSIGNAL_FILE = "./data/biosignals.csv"
-    VIDEO_FILE = "./data/michalrerucha_3. Recording 7242019 41055 PM_Dikablis Glasses 3_Scene Cam_Original_Eye Tracking Video.mp4"
-    CAN_SIGNAL_FILE = "./data/michalrerucha_3. Recording 7242019 41055 PM_CsvData.txt"
+    VIDEO_FILE = "./data/output_video.mp4"
+    CAN_SIGNAL_FILE = "./data/CAN2.csv"
     BIOSIGNAL_LOADER = "NEW"  # OLD
 
 
