@@ -32,13 +32,14 @@ class MainWindow(QtWidgets.QMainWindow):
     }
 
     POSSIBLE_TIMES_BETWEEN_FRAMES = {
+        "0.5s": 0.5,
         "1s": 1,
-        "3s": 3,
+        "2s": 2,
+        "5s": 5,
         "10s": 10,
         "30s": 30,
         "1min": 60,
-        "2min": 120,
-        "5min": 300,
+        "3min": 180,
         "10min": 600
     }
 
@@ -50,7 +51,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.video_file = video_file
         self.annotator = AnnotatorWindow()
         self.time_interval = self.POSSIBLE_TIME_AXES["1min"]
-        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["3s"]
+        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["1min"]
         self.fig = Figure(tight_layout=True)
         self.ax1 = self.fig.add_subplot(2, 2, 1)
         self.ax2 = self.fig.add_subplot(2, 2, 2)
@@ -59,6 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ax1.axis("off")
         self.axes = [self.ax1]
         self.canvas = FigureCanvas(self.fig)
+        self.canvas.mpl_connect('button_press_event', self.on_click)
 
         self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                   QtWidgets.QSizePolicy.Expanding)
@@ -109,7 +111,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.slider_label = QtWidgets.QLabel(self.get_position_label_text())
         self.slider_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
-        self.layout.addWidget(self.slider_label, 5, 1)
+        self.slider_label2 = QtWidgets.QLabel(self.get_mouse_position(0, 0))
+        self.slider_label2.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.layout.addWidget(self.slider_label, 5, 1, 1, 1)
+        self.layout.addWidget(self.slider_label2, 5, 0, 1, 1)
         out = self.visualizer.calculate_map_coordinates()
         self.visualizer.load_map(*out)
         self.setCentralWidget(self.main_widget)
@@ -128,6 +133,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
         self.update()
 
+    def on_click(self, event):
+        self.slider_label2.setText(self.get_mouse_position(event.xdata, event.ydata))
+
     def _annotate(self):
         frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC) / 1000.
         time_utc = self.visualizer.data_loader.get_time_utc(frame_time)
@@ -142,10 +150,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _dropdown_time_interval_action(self):
         self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown1.currentText()]
+        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES[self.dropdown1.currentText()]
+        self.dropdown2.setCurrentText(self.dropdown1.currentText())
         self._update()
 
     def _dropdown2_time_interval_action(self):
+        self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown2.currentText()]
         self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES[self.dropdown2.currentText()]
+        self.dropdown1.setCurrentText(self.dropdown2.currentText())
+        
         self._update()
 
     def _update(self):
@@ -260,6 +273,9 @@ class MainWindow(QtWidgets.QMainWindow):
         ret, frame = self._video.read()
         self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
         self.process_single_frame(frame[:, :, ::-1], self.frame_time, self.axes)
+
+    def get_mouse_position(self, x, y):
+        return "MOUSE position, X: {:.3f}, Y: {:.3f}.".format(x, y)
 
 
 if __name__ == '__main__':
