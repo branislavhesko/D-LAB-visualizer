@@ -45,6 +45,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, video_file: str):
         super(MainWindow, self).__init__()
+        self.grabKeyboard()
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.frame_time = 0
         pyplot.grid(True)
         self.main_widget = QtWidgets.QWidget(self)
@@ -78,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.annotator_button.setToolTip("runs annotator window")
         self.annotator_button.clicked.connect(self._annotate)
         self.next_frame_button.setToolTip("moves to the next frame")
-        self.next_frame_button.clicked.connect(self.on_button)
+        self.next_frame_button.clicked.connect(self.on_button_forward)
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.slider.minimum = 0
         self.slider.setMaximum(self._video.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -238,8 +240,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ax3[0].legend(plots, CanSignals.SIGNAL_KEYS, loc="upper right")
 
     @QtCore.pyqtSlot()
-    def on_button(self):
+    def on_button_forward(self):
         self.process_video()
+        self.slider_label.setText(self.get_position_label_text())
+        self.slider.setValue(self._video.get(cv2.CAP_PROP_POS_FRAMES))
+
+    @QtCore.pyqtSlot()
+    def on_button_back(self):
+        self.process_video(-1)
         self.slider_label.setText(self.get_position_label_text())
         self.slider.setValue(self._video.get(cv2.CAP_PROP_POS_FRAMES))
 
@@ -266,16 +274,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.process_video()
         self.slider_label.repaint()
 
-    def process_video(self):
+    def process_video(self, forward=1):
         actual = self._video.get(cv2.CAP_PROP_POS_FRAMES)
         self._video.set(cv2.CAP_PROP_POS_FRAMES,
-                        actual + self.time_between_frames * self._video.get(cv2.CAP_PROP_FPS))
+                        actual + forward * self.time_between_frames * self._video.get(cv2.CAP_PROP_FPS))
         ret, frame = self._video.read()
         self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
         self.process_single_frame(frame[:, :, ::-1], self.frame_time, self.axes)
 
     def get_mouse_position(self, x, y):
         return "MOUSE position, X: {:.3f}, Y: {:.3f}.".format(x, y)
+
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        print(a0.text())
+        if a0.key() == QtCore.Qt.Key_A:
+            print("Annotator pressed!")
+            self._annotate()
+
+        elif a0.key() == QtCore.Qt.Key_Right:
+            print("Right key pressed!")
+            self.on_button_forward()
+
+        elif a0.key() == QtCore.Qt.Key_Left:
+            print("Left key pressed!")
+            self.on_button_back()
 
 
 if __name__ == '__main__':

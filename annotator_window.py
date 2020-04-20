@@ -41,9 +41,11 @@ class AnnotatorWindow(QtWidgets.QMainWindow):
                                 str(self.time), self.text])
             f.write(output + "\n")
         self.text = ""
+        self.releaseKeyboard()
         self.hide()
 
     def run(self, video_file, time):
+        self.grabKeyboard()
         self.text = ""
         self.video_file = video_file
         self.time = time
@@ -53,6 +55,12 @@ class AnnotatorWindow(QtWidgets.QMainWindow):
     @staticmethod
     def from_seconds_to_datetime(seconds_from_epoch):
         return datetime.datetime.fromtimestamp(seconds_from_epoch).strftime("%m_%d_%Y-%H_%M_%S")
+
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        print(a0)
+        if a0.key() == QtCore.Qt.Key_F1:
+            self.click_button()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
