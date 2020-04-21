@@ -20,6 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
     send_fig = QtCore.pyqtSignal(str)
 
     POSSIBLE_TIME_AXES = {
+        "0.1s": 0.1,
         "0.5s": 0.5,
         "1s": 1,
         "2s": 2,
@@ -32,6 +33,7 @@ class MainWindow(QtWidgets.QMainWindow):
     }
 
     POSSIBLE_TIMES_BETWEEN_FRAMES = {
+        "0.1s": 0.1,
         "0.5s": 0.5,
         "1s": 1,
         "2s": 2,
@@ -52,8 +54,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_widget = QtWidgets.QWidget(self)
         self.video_file = video_file
         self.annotator = AnnotatorWindow()
-        self.time_interval = self.POSSIBLE_TIME_AXES["1min"]
-        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["1min"]
+        self.time_interval = self.POSSIBLE_TIME_AXES["5s"]
+        self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES["5s"]
         self.fig = Figure(tight_layout=True)
         self.ax1 = self.fig.add_subplot(2, 2, 1)
         self.ax2 = self.fig.add_subplot(2, 2, 2)
