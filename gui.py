@@ -288,7 +288,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return "MOUSE position, X: {:.3f}, Y: {:.3f}.".format(x, y)
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        print(a0.text())
         if a0.key() == QtCore.Qt.Key_A:
             print("Annotator pressed!")
             self._annotate()

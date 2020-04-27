@@ -57,9 +57,10 @@ class AnnotatorWindow(QtWidgets.QMainWindow):
         return datetime.datetime.fromtimestamp(seconds_from_epoch).strftime("%m_%d_%Y-%H_%M_%S")
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        print(a0)
         if a0.key() == QtCore.Qt.Key_F1:
             self.click_button()
+        else:
+            self.text_field.keyPressEvent(a0)
 
 
 if __name__ == "__main__":
