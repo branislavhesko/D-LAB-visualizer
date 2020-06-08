@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 import numpy as np
 import matplotlib
+
 matplotlib.use("Qt5Agg")
 from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -162,7 +163,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown2.currentText()]
         self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES[self.dropdown2.currentText()]
         self.dropdown1.setCurrentText(self.dropdown2.currentText())
-        
+
         self._update()
 
     def _update(self):
@@ -189,8 +190,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                             self.visualizer.gps_coords["latitude_img"])[0])
             closest_time = np.argmin(np.abs(self.visualizer.gps_coords["rec_time"].values - frame_time / 1000))
             self.plots.append(self.ax2.plot(self.visualizer.gps_coords["longitude_img"].values[closest_time],
-                     self.visualizer.gps_coords["latitude_img"].values[closest_time],
-                     "xr", markersize=21, mew=2)[0])
+                                            self.visualizer.gps_coords["latitude_img"].values[closest_time],
+                                            "xr", markersize=21, mew=2)[0])
 
         self.ax2.legend(["GPS route", "Actual position"], loc="upper right")
 
@@ -216,8 +217,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for index, bio_signal in enumerate(bio_signals):
             time = [frame_time / 1000 - self.time_interval,
                     frame_time / 1000 + self.time_interval]
-            bio_plots.append(self.ax4[index].plot(bio_signal.iloc[:, 0], bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
-            self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index],  **tkw)
+            bio_plots.append(
+                self.ax4[index].plot(bio_signal.iloc[:, 0], bio_signal.iloc[:, 1], self.visualizer.COLORS[index])[0])
+            self.ax4[index].tick_params(axis="y", colors=self.visualizer.COLORS[index], **tkw)
             self.ax4[index].set_xlim(time[0], time[1])
             xticks = ticker.MaxNLocator(20)
             self.ax4[index].xaxis.set_major_locator(xticks)
@@ -272,7 +274,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def update(self):
 
-        colors=["b", "r", "g", "y", "k", "c"]
+        colors = ["b", "r", "g", "y", "k", "c"]
         self.process_video()
         self.slider_label.repaint()
 
@@ -304,5 +306,6 @@ class MainWindow(QtWidgets.QMainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     import glob
+
     win = MainWindow(Configuration.VIDEO_FILE)
     sys.exit(app.exec_())
