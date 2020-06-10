@@ -104,6 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(QtWidgets.QLabel("Move in video"), 0, 2)
         self.video_move = QtWidgets.QPushButton("VIDEO PLAYER")
         self.video_move.clicked.connect(self._video_player_action)
+        self.video_move.setShortcut("CTRL+V")
         self.layout.addWidget(self.video_move, 1, 2)
         self.layout.addWidget(self.dropdown2, 1, 1)
         self.layout.addWidget(QtWidgets.QLabel("Synchronization time"), 0, 3)
