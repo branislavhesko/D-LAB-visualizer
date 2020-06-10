@@ -1,15 +1,19 @@
 import sys
 import scipy.io as sio
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, Qt
 import cv2
 
 
 class VideoCapture(QtWidgets.QWidget):
-    def __init__(self, filename, parent):
+    def __init__(self, filename, parent, cap):
         super().__init__()
-        self.cap = cv2.VideoCapture(str(filename[0]))
+        self.cap = cap
         self.video_frame = QtWidgets.QLabel()
+        self.parent = parent
         parent.layout.addWidget(self.video_frame)
+        parent.slider.setMaximum(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        parent.slider.valueChanged.connect(self.sliderMove)
+        self._started = False
 
     def nextFrameSlot(self):
         ret, frame = self.cap.read()
@@ -18,12 +22,26 @@ class VideoCapture(QtWidgets.QWidget):
         pix = QtGui.QPixmap.fromImage(img)
         self.video_frame.setPixmap(pix)
 
+    def sliderMove(self):
+        value = int(self.parent.slider.value() - 1)
+        value = value if value > 0 else 1
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, value)
+        self.nextFrameSlot()
+
     def start(self):
+        if self._started:
+            self._started = False
+            self.timer.stop()
+            return
+        self._started = True
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.nextFrameSlot)
         self.timer.start(1000//30)
 
     def pause(self):
+        if not self._started:
+            return
+        self._started = False
         self.timer.stop()
 
     def deleteLater(self):
@@ -37,23 +55,25 @@ class VideoDisplayWidget(QtWidgets.QWidget):
 
         self.layout = QtWidgets.QFormLayout(self)
 
-        self.startButton = QtWidgets.QPushButton('Start', parent)
+        self.startButton = QtWidgets.QPushButton('Play', parent)
         self.startButton.clicked.connect(parent.startCapture)
+        self.startButton.setShortcut(QtCore.Qt.Key_Space)
         self.startButton.setFixedWidth(50)
-        self.pauseButton = QtWidgets.QPushButton('Pause', parent)
-        self.pauseButton.setFixedWidth(50)
-        self.layout.addRow(self.startButton, self.pauseButton)
-
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.slider.setMinimum(0)
+        self.layout.addRow(self.startButton)
+        self.layout.addRow(self.slider)
         self.setLayout(self.layout)
 
 
 class ControlWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, parent, cap):
         super(ControlWindow, self).__init__()
         self.setGeometry(50, 50, 800, 600)
-        self.setWindowTitle("PyTrack")
-
+        self.setWindowTitle("Video Player")
+        self.cap = cap
         self.capture = None
+        self._parent = parent
 
         self.matPosFileName = None
         self.videoFileName = None
@@ -61,50 +81,26 @@ class ControlWindow(QtWidgets.QMainWindow):
         self.updatedPositionData  = {'red_x':[], 'red_y':[], 'green_x':[], 'green_y': [], 'distance': []}
         self.updatedMatPosFileName = None
 
-        self.isVideoFileLoaded = False
-        self.isPositionFileLoaded = False
 
         self.quitAction = QtWidgets.QAction("&Exit", self)
         self.quitAction.setShortcut("Ctrl+Q")
         self.quitAction.setStatusTip('Close The App')
         self.quitAction.triggered.connect(self.closeApplication)
 
-        self.openMatFile = QtWidgets.QAction("&Open Position File", self)
-        self.openMatFile.setShortcut("Ctrl+Shift+T")
-        self.openMatFile.setStatusTip('Open .mat File')
-        self.openMatFile.triggered.connect(self.loadPosMatFile)
-
-        self.openVideoFile = QtWidgets.QAction("&Open Video File", self)
-        self.openVideoFile.setShortcut("Ctrl+Shift+V")
-        self.openVideoFile.setStatusTip('Open .h264 File')
-        self.openVideoFile.triggered.connect(self.loadVideoFile)
-
         self.mainMenu = self.menuBar()
         self.fileMenu = self.mainMenu.addMenu('&File')
-        self.fileMenu.addAction(self.openMatFile)
-        self.fileMenu.addAction(self.openVideoFile)
         self.fileMenu.addAction(self.quitAction)
-
         self.videoDisplayWidget = VideoDisplayWidget(self)
         self.setCentralWidget(self.videoDisplayWidget)
 
     def startCapture(self):
-        if not self.capture and self.isVideoFileLoaded:
-            self.capture = VideoCapture(self.videoFileName, self.videoDisplayWidget)
-            self.videoDisplayWidget.pauseButton.clicked.connect(self.capture.pause)
+        if not self.capture:
+            self.capture = VideoCapture(self.videoFileName, self.videoDisplayWidget, self.cap)
         self.capture.start()
 
     def endCapture(self):
         self.capture.deleteLater()
         self.capture = None
-
-    def loadPosMatFile(self):
-        try:
-            self.matPosFileName = str(QtWidgets.QFileDialog.getOpenFileName(self, 'Select .mat position File'))
-            self.positionData = sio.loadmat(self.matPosFileName)
-            self.isPositionFileLoaded = True
-        except:
-            print("Please select a .mat file")
 
     def loadVideoFile(self):
         try:
@@ -114,13 +110,20 @@ class ControlWindow(QtWidgets.QMainWindow):
             print("Please select a .h264 file")
 
     def closeApplication(self):
-        choice = QtWidgets.QMessageBox.question(self, 'Message','Do you really want to exit?',
-                                            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        if choice == QtWidgets.QMessageBox.Yes:
-            print("Closing....")
-            sys.exit()
-        else:
-            pass
+        self.releaseKeyboard()
+        self._parent.update_without_next()
+        self.hide()
+        # choice = QtWidgets.QMessageBox.question(self, 'Message','Do you really want to exit?',
+        #                                     QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        # if choice == QtWidgets.QMessageBox.Yes:
+        #     print("Closing....")
+        #     sys.exit()
+        # else:
+        #     pass
+
+    @property
+    def actual_position(self):
+        return int(self.capture.cap.get(cv2.CAP_PROP_POS_FRAMES))
 
 
 if __name__ == '__main__':

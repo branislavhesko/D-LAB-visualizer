@@ -15,6 +15,7 @@ from config import Configuration, CanSignals
 from visualizer import Visualizer
 from annotator_window import AnnotatorWindow
 from checkable_combobox import CheckableComboBox
+from video_player import ControlWindow
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -72,6 +73,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.updateGeometry()
         self.visualizer = Visualizer()
         self._video = cv2.VideoCapture(video_file)
+        self._video_player = ControlWindow(self, self._video)
         self.dropdown1 = QtWidgets.QComboBox()
         self.dropdown1.addItems(list(self.POSSIBLE_TIME_AXES.keys()))
         self.dropdown1.setCurrentIndex(0)
@@ -82,6 +84,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.annotator_button = QtWidgets.QPushButton("ANNOTATE")
         self.annotator_button.setToolTip("runs annotator window")
         self.annotator_button.clicked.connect(self._annotate)
+        self.annotator_button.setShortcut("CTRL+A")
         self.next_frame_button.setToolTip("moves to the next frame")
         self.next_frame_button.clicked.connect(self.on_button_forward)
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -98,16 +101,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(QtWidgets.QLabel("Select time axis for signals"), 0, 0)
         self.layout.addWidget(self.dropdown1, 1, 0)
         self.layout.addWidget(QtWidgets.QLabel("Select next frame step"), 0, 1)
+        self.layout.addWidget(QtWidgets.QLabel("Move in video"), 0, 2)
+        self.video_move = QtWidgets.QPushButton("VIDEO PLAYER")
+        self.video_move.clicked.connect(self._video_player_action)
+        self.layout.addWidget(self.video_move, 1, 2)
         self.layout.addWidget(self.dropdown2, 1, 1)
-        self.layout.addWidget(QtWidgets.QLabel("Synchronization time"), 0, 2)
+        self.layout.addWidget(QtWidgets.QLabel("Synchronization time"), 0, 3)
         self.synchronization_text_field = QtWidgets.QLineEdit("0")
         self.synchronization_text_field.textChanged.connect(self._apply_synchronization_time)
         self.synchronization_text_field.setMaximumWidth(120)
         self._synchronization_time = 0
-        self._which_signal_to_plot = CheckableComboBox()
-
+        self._which_signal_to_plot = CheckableComboBox(self)
         self.layout.addWidget(self._which_signal_to_plot, 2, 2)
-        self.layout.addWidget(self.synchronization_text_field, 1, 2)
+        self.layout.addWidget(self.synchronization_text_field, 1, 3)
         self.layout.addWidget(self.next_frame_button, 2, 0, 1, 1)
         self.layout.addWidget(self.annotator_button, 2, 1, 1, 1)
 
@@ -141,6 +147,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def on_click(self, event):
         self.slider_label2.setText(self.get_mouse_position(event.xdata, event.ydata))
 
+    def _video_player_action(self):
+        self._video_player.show()
+
     def _annotate(self):
         frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC) / 1000.
         time_utc = self.visualizer.data_loader.get_time_utc(frame_time)
@@ -149,7 +158,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _apply_synchronization_time(self):
         try:
             self._synchronization_time = float(self.synchronization_text_field.text()) * 1000.
-            self._update()
+            self.update_without_next()
         except ValueError:
             pass
 
@@ -157,16 +166,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown1.currentText()]
         self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES[self.dropdown1.currentText()]
         self.dropdown2.setCurrentText(self.dropdown1.currentText())
-        self._update()
+        self.update_without_next()
 
     def _dropdown2_time_interval_action(self):
         self.time_interval = self.POSSIBLE_TIME_AXES[self.dropdown2.currentText()]
         self.time_between_frames = self.POSSIBLE_TIMES_BETWEEN_FRAMES[self.dropdown2.currentText()]
         self.dropdown1.setCurrentText(self.dropdown2.currentText())
 
-        self._update()
+        self.update_without_next()
 
-    def _update(self):
+    def update_without_next(self):
         self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
         self._video.set(cv2.CAP_PROP_POS_MSEC, self.frame_time)
         ret, frame = self._video.read()

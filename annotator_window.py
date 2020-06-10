@@ -21,6 +21,7 @@ class AnnotatorWindow(QtWidgets.QMainWindow):
         self.button = QtWidgets.QPushButton("ANNOTATE")
         self.button.setToolTip("Click to annotate.")
         self.button.clicked.connect(self.click_button)
+        self.button.setShortcut("CTRL+Q")
         self.text_field = QtWidgets.QTextEdit("write your annotation here!")
         self.layout.addWidget(self.button, 0, 0)
         self.layout.addWidget(self.text_field, 1, 0)
@@ -40,6 +41,9 @@ class AnnotatorWindow(QtWidgets.QMainWindow):
                                 self.from_seconds_to_datetime(self.time / 1000.),
                                 str(self.time), self.text])
             f.write(output + "\n")
+        self._exit()
+
+    def _exit(self):
         self.text = ""
         self.releaseKeyboard()
         self.hide()
@@ -62,6 +66,9 @@ class AnnotatorWindow(QtWidgets.QMainWindow):
         else:
             self.text_field.keyPressEvent(a0)
 
+    def closeEvent(self, event):
+        print("User has clicked the red x on the main window")
+        self._exit()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
