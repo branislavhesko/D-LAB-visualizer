@@ -10,8 +10,8 @@ from utils import from_seconds_to_datetime, sort_function
 
 class PreprocessData:
     UTC = "UTC"
-    FPS = 60
-    FRAME_SIZE= (1920, 1080)
+    FPS = 30
+    FRAME_SIZE= (1280, 720)
     FRAME_SIZE_EYE = (384, 288)
 
     def __init__(self, base_path, output_path):
@@ -20,6 +20,7 @@ class PreprocessData:
         self._new_video = None
         self._new_left = None
         self._new_right = None
+        self._frame_size = None
 
     def execute(self):
         folders = next(os.walk(self._base_path))[1]
@@ -33,7 +34,7 @@ class PreprocessData:
                     csv_files = sorted(glob.glob(os.path.join(
                         folder_path, "*Recording*.txt")), key=sort_function)
                     video_files_orig = sorted(glob.glob(os.path.join(
-                        folder_path, "*Cam_Original_Eye Tracking Video.mp4")), key=sort_function)
+                        folder_path, "*Scene Cam*.mp4")), key=sort_function)
                     video_files_left = sorted(glob.glob(os.path.join(
                         folder_path, "*Eye Cam - Left.mp4")), key=sort_function)
                     video_files_right = sorted(glob.glob(os.path.join(
@@ -46,6 +47,7 @@ class PreprocessData:
                     if os.path.exists(output_path_data):
                         print("THIS FOLDER IS ALREADY PROCESSED: {}.".format(output_path_data))
                         continue
+                    print("output video: {}".format(output_path_video))
                     self._new_video = cv2.VideoWriter(output_path_video, cv2.VideoWriter_fourcc(*"H264"), self.FPS, 
                                                       self.FRAME_SIZE)
                     self._new_left = cv2.VideoWriter(output_path_left, cv2.VideoWriter_fourcc(*"H264"), self.FPS, 
@@ -71,7 +73,10 @@ class PreprocessData:
                         time_gap = (start_time - end_time) if end_time > 0 else 0
                         end_time = csv_data[self.UTC].values[-1] / 1000.
                         print(time_gap)
+                        self._frame_size = self.FRAME_SIZE
                         self._new_video = self.process_video(self._new_video, video_orig_file, time_gap)
+                        self._frame_size = self.FRAME_SIZE_EYE
+
                         if len(video_left_file):
                             self._new_left = self.process_video(self._new_left, video_left_file, time_gap)
                         if len(video_right_file):
@@ -102,7 +107,7 @@ class PreprocessData:
         for i in tqdm(range(int(old_video.get(cv2.CAP_PROP_FRAME_COUNT)))):
             ret, frame = old_video.read()
             if ret and mask[i]:
-                new_video.write(frame)
+                new_video.write(cv2.resize(np.copy(frame), self._frame_size))
         return new_video
 
     @staticmethod
@@ -133,30 +138,31 @@ class PreprocessData:
     
     def _get_output_path(self, folder, subfolder, subsubfolder):
         folder_dir = os.path.join(self._output_path, folder, subfolder, subsubfolder)
-
+        print("FOLDER DIR: {}".format(folder_dir))
         if not os.path.exists(folder_dir):
             os.makedirs(folder_dir)
-        return (os.path.join(folder_dir, "output_video.mp4"), os.path.join(folder_dir, "CAN.csv"), 
+        return (os.path.join(folder_dir, "output_video.mkv"), os.path.join(folder_dir, "CAN.csv"), 
                 os.path.join(folder_dir, "left.mp4"), os.path.join(folder_dir, "right.mp4"))
 
     def insert_video_low_fps(self, new_video, old_video, old_fps, fps):
         total_frames = old_video.get(cv2.CAP_PROP_FRAME_COUNT)
         num_frames_needed = total_frames * fps / old_fps
-        random_repetitions = np.random.choice(int(total_frames), int(np.round(abs(total_frames - num_frames_needed))), replace=False)
+        random_repetitions = np.random.choice(int(total_frames), int(np.round(abs(total_frames - num_frames_needed))), replace=True)
         print("P: {}, M: {}".format(total_frames, num_frames_needed))
-        for _ in range(int(total_frames)):
+        for idx in tqdm(range(int(total_frames))):
             ret, frame = old_video.read()
             if ret:
-                new_video.write(frame)
-            if _ in random_repetitions:
-                print("Duplicating: {}".format(_))
-                new_video.write(frame)
+                new_video.write(cv2.resize(np.copy(frame), self._frame_size))
+                if idx in random_repetitions:
+                    print("Duplicating: {}".format(idx))
+                    new_video.write(cv2.resize(np.copy(frame), self._frame_size))
         return new_video
 
     def insert_empty_frames(self, new_video, time_gap, frame_width, frame_height):
         number_of_frames = time_gap * self.FPS
         for _ in range(int(np.round(number_of_frames))):
-            new_video.write(np.zeros((frame_height, frame_width, 3), dtype=np.uint8))
+            frame = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
+            new_video.write(cv2.resize(frame, self._frame_size))
         return new_video
 
     def _number_of_empty_frames(self, length, fps):

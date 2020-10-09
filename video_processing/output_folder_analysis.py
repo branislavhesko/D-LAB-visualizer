@@ -5,6 +5,7 @@ logging.basicConfig(filename="log.log", format='%(filename)s: %(message)s',
                     level=logging.INFO)
 import os
 import pandas as pd
+from tqdm import tqdm
 
 
 class ProcessedOutputStats:
@@ -26,7 +27,7 @@ class ProcessedOutputStats:
                     biosignal_file = glob.glob(os.path.join(self._path, folder, subfolder, subsubfolder, "biosignals.csv"))
                     biosignal_file = biosignal_file[0] if any(biosignal_file) else None
                     can_signal_file = glob.glob(os.path.join(self._path, folder, subfolder, subsubfolder, "CAN.csv"))[0]
-                    video_file = glob.glob(os.path.join(self._path, folder, subfolder, subsubfolder, "output_video.mp4"))[0]
+                    video_file = glob.glob(os.path.join(self._path, folder, subfolder, subsubfolder, "output_video.*"))[0]
                     left_file = glob.glob(os.path.join(self._path, folder, subfolder, subsubfolder, "left.mp4"))
                     left_file = left_file[0] if any(left_file) else None
                     right_file = glob.glob(os.path.join(self._path, folder, subfolder, subsubfolder, "right.mp4"))
@@ -37,7 +38,13 @@ class ProcessedOutputStats:
                             continue
                         video = cv2.VideoCapture(f)
                         fps = video.get(cv2.CAP_PROP_FPS) if video.get(cv2.CAP_PROP_FPS) > 1 else -1
-                        self._logger.info(f"FILE: {f}, length: {video.get(cv2.CAP_PROP_FRAME_COUNT) / fps}, fps: {fps}")
+                        frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+                        if frame_count < 0:
+                            counter = 0
+                            while video.read()[0]:
+                                counter += 1
+                            frame_count = counter
+                        self._logger.info(f"FILE: {f}, length: {frame_count / fps}, fps: {fps}")
                         video.release()
                     can = pd.read_csv(can_signal_file)
                     duration = can["UTC"].values[-1] - can["UTC"].values[0]

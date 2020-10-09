@@ -39,6 +39,8 @@ class PreprocessBiosignalData:
                         else:
                             biosignal_output.data = pd.concat([biosignal_output.data, loader.data], sort=False)
                     if biosignal_output is not None:
+                        if not os.path.exists(os.path.join(self.output_path, folder, subfolder, subsubfolder)):
+                            os.makedirs(os.path.join(self.output_path, folder, subfolder, subsubfolder))
                         biosignal_output.save(os.path.join(self.output_path, folder, subfolder, subsubfolder, "biosignals.csv"))
 
 
