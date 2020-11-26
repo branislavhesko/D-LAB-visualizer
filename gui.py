@@ -1,14 +1,14 @@
-import cv2
 import sys
-from tqdm import tqdm
 
-import numpy as np
+import cv2
 import matplotlib
+import numpy as np
 
 matplotlib.use("Qt5Agg")
-from matplotlib.backends.backend_qt5agg import FigureCanvas, FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import pyplot, ticker
+import pandas as pd
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from config import Configuration, CanSignals
@@ -49,8 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, video_file: str):
         super(MainWindow, self).__init__()
-        self.grabKeyboard()
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        # self.grabKeyboard()
         self.frame_time = 0
         pyplot.grid(True)
         self.main_widget = QtWidgets.QWidget(self)
@@ -117,7 +116,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(self.synchronization_text_field, 1, 3)
         self.layout.addWidget(self.next_frame_button, 2, 0, 1, 1)
         self.layout.addWidget(self.annotator_button, 2, 1, 1, 1)
-
+        self.saver_button = QtWidgets.QPushButton("SAVE INTO CSV")
+        self.saver_button.clicked.connect(self.saver_button_action)
+        self.layout.addWidget(self.saver_button, 2, 3)
         self.layout.addWidget(self.canvas, 3, 0, 1, 3)
         self.layout.addWidget(self.slider, 4, 0, 1, 3)
         self.slider_label = QtWidgets.QLabel(self.get_position_label_text())
@@ -144,6 +145,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.show()
         self.update()
+
+    def saver_button_action(self):
+        frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
+        biosignals = self.visualizer.data_loader.get_biosignals_in_time_window(
+            (frame_time + self._synchronization_time) / 1000, self.time_interval, signal_names=None)
+        biosignals = pd.concat([biosignals[0]["rec_time"], pd.concat(biosignals, axis=1).iloc[:, 1::2]], axis=1)
+        car_signals = self.visualizer.data_loader.get_car_signals_in_time_window(frame_time / 1000, self.time_interval)
+        car_signals = pd.concat([car_signals[0]["rec_time"], pd.concat(car_signals, axis=1).iloc[:, 1::2]], axis=1)
+        biosignals.to_csv("biosignals_time_{}s_synchro_{}s.csv".format(
+            int(frame_time // 1000), int(self._synchronization_time // 1000)), index=False)
+        car_signals.to_csv("car_signals_{}s_synchro_{}s.csv".format(
+            int(frame_time // 1000), int(self._synchronization_time // 1000)), index=False)
 
     def on_click(self, event):
         self.slider_label2.setText(self.get_mouse_position(event.xdata, event.ydata))
@@ -300,6 +313,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return "MOUSE position, X: {:.3f}, Y: {:.3f}.".format(x, y)
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        print(a0)
         if a0.key() == QtCore.Qt.Key_A:
             print("Annotator pressed!")
             self._annotate()
@@ -312,10 +326,13 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Left key pressed!")
             self.on_button_back()
 
+        elif a0.key() == QtCore.Qt.Key_Return:
+            self.synchronization_text_field.clearFocus()
+        super().keyPressEvent(a0)
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    import glob
 
     win = MainWindow(Configuration.VIDEO_FILE)
     sys.exit(app.exec_())
