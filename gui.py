@@ -173,7 +173,6 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             self._synchronization_time = float(self.synchronization_text_field.text()) * 1000.
             self.update_without_next()
-            self.synchronization_text_field.clearFocus()
         except ValueError:
             pass
 
@@ -327,6 +326,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Left key pressed!")
             self.on_button_back()
 
+        elif a0.key() == QtCore.Qt.Key_Return:
+            self.synchronization_text_field.clearFocus()
         super().keyPressEvent(a0)
 
 
