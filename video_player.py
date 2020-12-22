@@ -94,11 +94,13 @@ class ControlWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.videoDisplayWidget)
 
     def startCapture(self):
+        self.grabKeyboard()
         if not self.capture:
             self.capture = VideoCapture(self.videoFileName, self.videoDisplayWidget, self.cap)
         self.capture.start()
 
     def endCapture(self):
+        self.releaseKeyboard()
         self.capture.deleteLater()
         self.capture = None
 

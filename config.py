@@ -1,6 +1,6 @@
 class Configuration:
     BIOSIGNAL_FILE = "./data/biosignals.csv"
-    VIDEO_FILE = "./data/output_video_objects.mkv"
+    VIDEO_FILE = "./data/output_video.mkv"
     CAN_SIGNAL_FILE = "./data/CAN2.csv"
     BIOSIGNAL_LOADER = "NEW"  # OLD
 
