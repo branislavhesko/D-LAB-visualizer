@@ -102,19 +102,22 @@ class AddInfraAnnotations():
                         gps_annotation = pd.DataFrame([], columns=["gps_longitude", "gps_latitude", "utc", "mark", "dist[m]"])
                         folder_path = os.path.join(self._base_path, folder, subfolder, subsubfolder)
                         print("Processing: {}".format(folder_path))
+                        if os.path.exists(os.path.join(self._base_path, folder, subfolder, subsubfolder, "infrastructure_annotations.csv")):
+                            continue
                         can_file = os.path.join(folder_path, "CAN2.csv")
                         data = pd.read_csv(can_file)
                         data = data.loc[:, ("UTC", "GPS_Latitude", "GPS_Longitude")]
-                        data = data[pd.notnull(data.loc[:, "GPS_Latitude"])].reset_index(drop=True)
+                        data = data[pd.notnull(data.loc[:, "GPS_Longitude"])].reset_index(drop=True)
                         for _, row in self.annotations.iterrows():
                             latitude, longitude = row["gps_latitude"], row["gps_longitude"]
                             distances = []
                             for _, drow in data.iterrows():
                                 latitude_can, longitude_can = drow["GPS_Latitude"], drow["GPS_Longitude"]
                                 distances.append(haversine((latitude, longitude), (latitude_can, longitude_can)))
-                            index = np.argmin(distances)
-                            gps_annotation = pd.concat([gps_annotation, pd.DataFrame([[
-                                data["GPS_Longitude"].iloc[index], data["GPS_Latitude"].iloc[index], 
-                                data["UTC"].iloc[index], row["mark"], np.amin(distances)]], columns=["gps_longitude", "gps_latitude", "utc", "mark", "dist[m]"])])
+                            if len(distances):
+                                index = np.argmin(distances)
+                                gps_annotation = pd.concat([gps_annotation, pd.DataFrame([[
+                                    data["GPS_Longitude"].iloc[index], data["GPS_Latitude"].iloc[index], 
+                                    data["UTC"].iloc[index], row["mark"], np.amin(distances)]], columns=["gps_longitude", "gps_latitude", "utc", "mark", "dist[m]"])])
                         gps_annotation.to_csv(os.path.join(self._base_path, folder, subfolder, subsubfolder, "infrastructure_annotations.csv"), sep="\t", index=False)
 AddInfraAnnotations().execute("/media/brani/DATA/BIORIDIC_PROCESSED")

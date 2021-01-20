@@ -23,6 +23,8 @@ class CanFixer:
                         folder_path = os.path.join(self._base_path, folder, subfolder, subsubfolder)
                         print("Processing: {}".format(folder_path))
                         can_file = os.path.join(folder_path, "CAN.csv")
+                        if os.path.exists(can_file.replace("CAN", "CAN2")):
+                            continue
                         data = pd.read_csv(can_file)
                         out_can_file = can_file.replace("CAN", "CAN2")
                         data["rec_time"] = data["UTC"] - data["UTC"][0]

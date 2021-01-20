@@ -1,6 +1,10 @@
 import datetime
 import math
 
+import cv2
+import tqdm
+import numpy as np
+
 
 def haversine(coord1, coord2):
     R = 6372800  # Earth radius in meters
@@ -33,3 +37,19 @@ def get_time(time):
     time_parts = [float(t) for t in time_parts]
     time_parts[0] = time_parts[0] if time_parts[0] > 12 else time_parts[0] + 24
     return time_parts[0] * 3600 + time_parts[1] * 60 + time_parts[2]
+
+
+def detect_eyetracker_in_video(video_file, file_name, template_file):
+    template = cv2.imread(template_file)
+    template[template[:, :, 2] < 220] = 0
+    video = cv2.VideoCapture(video_file)
+    file = open(file_name, "w")
+    file.write("\t".join(["row", "col"]) + "\n")
+    ret = True
+    for idx in tqdm.tqdm(range(int(video.get(cv2.CAP_PROP_FRAME_COUNT)))):
+        ret, frame = video.read()
+        frame[(frame[:, :, 2] < 200) | (frame[:, :, 0] > 40) | (frame[:, :, 1] > 40), :] = 0
+        matched = cv2.matchTemplate(frame, template, method=cv2.TM_CCOEFF_NORMED)
+        maximum = np.unravel_index(np.argmax(matched), matched.shape)
+        file.write("\t".join(list(map(str, maximum))) + "\n")
+    file.close()

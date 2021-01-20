@@ -46,5 +46,5 @@ class PreprocessBiosignalData:
 
 
 if __name__ == "__main__":
-    p = PreprocessBiosignalData("/media/brani/DATA/BIORIDIC", "/media/brani/DATA/BIORIDIC_PROCESSED")
+    p = PreprocessBiosignalData("/media/brani/DATA/BIORIDIC_PROCESSED", "/media/brani/DATA/BIORIDIC_PROCESSED")
     p.execute()

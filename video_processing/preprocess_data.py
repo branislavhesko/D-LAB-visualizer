@@ -31,10 +31,11 @@ class PreprocessData:
                 subsubfolders = next(os.walk(os.path.join(self._base_path, folder, subfolder)))[1]
                 for subsubfolder in subsubfolders:
                     folder_path = os.path.join(self._base_path, folder, subfolder, subsubfolder)
+                    os.makedirs(folder_path, exist_ok=True)
                     csv_files = sorted(glob.glob(os.path.join(
                         folder_path, "*Recording*.txt")), key=sort_function)
                     video_files_orig = sorted(glob.glob(os.path.join(
-                        folder_path, "*Scene Cam*.mp4")), key=sort_function)
+                        folder_path, "*Scene Cam_*.mp4")), key=sort_function)
                     video_files_left = sorted(glob.glob(os.path.join(
                         folder_path, "*Eye Cam - Left.mp4")), key=sort_function)
                     video_files_right = sorted(glob.glob(os.path.join(
@@ -176,5 +177,5 @@ class PreprocessData:
 
 
 if __name__ == "__main__":
-    p = PreprocessData("/media/brani/DATA/BIORIDIC", "/media/brani/DATA/BIORIDIC_PROCESSED")
+    p = PreprocessData("/home/brani/Desktop/BIORIDICE_PROCESSED", "/media/brani/DATA/BIORIDIC_PROCESSED")
     p.execute()
