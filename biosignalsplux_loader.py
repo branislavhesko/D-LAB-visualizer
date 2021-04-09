@@ -1,7 +1,13 @@
 import numpy as np
-
+import datetime
 import pandas as pd
 
+
+def _get_utc_time(header):
+    date_ = list(map(int, header["date"].split("-")))
+    time_ = list(map(int, header["time"].split(".")[0].split(":")))
+    return datetime.datetime(year=date_[0], month=date_[1], day=date_[2], hour=time_[0],
+                             minute=time_[1], second=time_[2], microsecond=1000 * int(header["time"].split(".")[1])) - datetime.datetime(1970, 1, 1, hour=2)
 
 class BiosignalsPluxLoader:
 
@@ -10,11 +16,13 @@ class BiosignalsPluxLoader:
         self.data = None
         self.header = None
         self.device_name = None
+        self.initial_utc = None
 
     def load_file(self, filename):
         self.filename = filename
         self._load_header()
         self._load_data()
+        self.initial_utc = int(_get_utc_time(self.header).total_seconds() * 1000)
 
     def normalize_data(self):
         resulutions = self.header["resolution"]

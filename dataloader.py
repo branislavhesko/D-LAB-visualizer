@@ -12,6 +12,7 @@ class DataLoader:
         self._gps_signals = None
         self._car_signals = None
         self.bio_signals = None
+        self.initial_utc = None
 
     def load(self):
         self.data = pd.read_csv(Configuration.CAN_SIGNAL_FILE, delimiter=",")
@@ -20,6 +21,7 @@ class DataLoader:
         self.bio_signals = BiosignalsPluxLoaderNew() if \
             Configuration.BIOSIGNAL_LOADER == "NEW" else BiosignalsPluxLoader()
         self._load_biosignals(Configuration.BIOSIGNAL_FILE)
+        self.initial_utc = self.data["UTC"][0]
         print(self.data.columns)
 
     def _load_biosignals(self, bio_file):

@@ -15,6 +15,7 @@ from config import Configuration, CanSignals
 from visualizer import Visualizer
 from annotator_window import AnnotatorWindow
 from checkable_combobox import CheckableComboBox
+from synchronization_manager import SynchronizationManager
 from video_player import ControlWindow
 
 
@@ -107,10 +108,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(self.video_move, 1, 2)
         self.layout.addWidget(self.dropdown2, 1, 1)
         self.layout.addWidget(QtWidgets.QLabel("Synchronization time"), 0, 3)
-        self.synchronization_text_field = QtWidgets.QLineEdit("0")
+        synchronization_manager = SynchronizationManager(Configuration.SYNCHRONIZATION_FILE)
+        self._synchronization_time = (self.visualizer.data_loader.bio_signals.initial_utc - self.visualizer.data_loader.initial_utc) / 1000. - synchronization_manager.synchronization_time
+        self.synchronization_text_field = QtWidgets.QLineEdit(str(self._synchronization_time))
         self.synchronization_text_field.textChanged.connect(self._apply_synchronization_time)
         self.synchronization_text_field.setMaximumWidth(120)
-        self._synchronization_time = 0
         self._which_signal_to_plot = CheckableComboBox(self)
         self.layout.addWidget(self._which_signal_to_plot, 2, 2)
         self.layout.addWidget(self.synchronization_text_field, 1, 3)
@@ -145,6 +147,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.show()
         self.update()
+        self._apply_synchronization_time()
 
     def saver_button_action(self):
         frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
