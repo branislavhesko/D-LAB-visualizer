@@ -12,7 +12,7 @@ class SynchronizationManager:
 
     @property
     def synchronization_time(self):
-        return self._synchronization_time / 1000. if self._synchronization_time is not None else None
+        return self._synchronization_time / 1000. if self._synchronization_time is not None else 0.
 
     def _load(self, path):
         if not os.path.exists(path):
