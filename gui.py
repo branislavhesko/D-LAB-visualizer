@@ -89,8 +89,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.next_frame_button.clicked.connect(self.on_button_forward)
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.slider.minimum = 0
-        self.slider.setMaximum(self._video.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.slider.setValue(self._video.get(cv2.CAP_PROP_POS_FRAMES))
+        self.slider.setMaximum(int(self._video.get(cv2.CAP_PROP_FRAME_COUNT)))
+        self.slider.setValue(int(self._video.get(cv2.CAP_PROP_POS_FRAMES)))
         self.slider.sliderReleased.connect(self.slider_action)
 
         self.dropdown1.currentIndexChanged.connect(self._dropdown_time_interval_action)
@@ -273,7 +273,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def on_button_forward(self):
         self.process_video()
         self.slider_label.setText(self.get_position_label_text())
-        self.slider.setValue(self._video.get(cv2.CAP_PROP_POS_FRAMES))
+        self.slider.setValue(int(self._video.get(cv2.CAP_PROP_POS_FRAMES)))
 
     @QtCore.pyqtSlot()
     def on_button_back(self):
