@@ -287,6 +287,8 @@ class MainWindow(QtWidgets.QMainWindow):
         print(value)
         self._video.set(cv2.CAP_PROP_POS_FRAMES, value)
         ret, frame = self._video.read()
+        if not ret:
+            frame = np.zeros((720, 1280, 3))
         self.frame_time = self._video.get(cv2.CAP_PROP_POS_MSEC)
         self.process_single_frame(frame[:, :, ::-1], self.frame_time, self.axes)
         self.slider_label.setText(self.get_position_label_text())
