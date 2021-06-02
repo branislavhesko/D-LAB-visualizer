@@ -29,6 +29,7 @@ class CanFixer:
                         out_can_file = can_file.replace("CAN", "CAN2")
                         data["rec_time"] = data["UTC"] - data["UTC"][0]
                         data.to_csv(out_can_file)
+                        del data
 
 
 if __name__ == "__main__":

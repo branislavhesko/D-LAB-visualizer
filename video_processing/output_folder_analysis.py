@@ -46,9 +46,11 @@ class ProcessedOutputStats:
                             frame_count = counter
                         self._logger.info(f"FILE: {f}, length: {frame_count / fps}, fps: {fps}")
                         video.release()
+                    del video
                     can = pd.read_csv(can_signal_file)
                     duration = can["UTC"].values[-1] - can["UTC"].values[0]
                     self._logger.info(f"CAN SIGNAL: {can_signal_file}, shape: {can.shape}, duration: {duration / 1000.}")
+                    del can
                     if biosignal_file is not None:
                         bio = pd.read_csv(biosignal_file, delimiter="\t", skiprows=1)
                         dur = bio["rec_time"].values[-1]

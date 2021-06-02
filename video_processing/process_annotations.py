@@ -14,8 +14,8 @@ class AnnotatorProcessor:
 
     @staticmethod
     def _annot_name_to_video_number(annot_name):
-        video_number = annot_name.split("/")[2].split("n")[0]
-        return "noc", video_number
+        video_number = annot_name.split("/")[2]
+        return "den", video_number
 
     @staticmethod
     def _get_folders(data_path):
@@ -25,7 +25,9 @@ class AnnotatorProcessor:
         subfolders = list(itertools.chain(*subfolders))
         subsubfolders = [list(map(lambda subsubfolder: os.path.join(subfolder, subsubfolder), next(
             os.walk(subfolder))[1])) for subfolder in subfolders]
-        return list(itertools.chain(*subsubfolders))        
+        l = filter(lambda x: "den" in x, list(itertools.chain(*subsubfolders)))
+        print(list(subsubfolders))
+        return list(l)
         
     def _find_name(self, name):
         name = list(filter(lambda x: "/".join(self._annot_name_to_video_number(name)) in x, self._files.keys()))[0]
@@ -46,4 +48,4 @@ class AnnotatorProcessor:
 
 
 if __name__ == "__main__":
-    AnnotatorProcessor(None).execute("/media/brani/DATA/BIORIDIC_PROCESSED", "./annotation.txt")
+    AnnotatorProcessor(None).execute("/media/brani/DATA/BIORIDIC_PROCESSED", "./annotation-edit.txt")

@@ -44,12 +44,13 @@ def detect_eyetracker_in_video(video_file, file_name, template_file):
     template[template[:, :, 2] < 220] = 0
     video = cv2.VideoCapture(video_file)
     file = open(file_name, "w")
-    file.write("\t".join(["row", "col"]) + "\n")
+    file.write("\t".join(["frame_id", "x", "y"]) + "\n")
     ret = True
     for idx in tqdm.tqdm(range(int(video.get(cv2.CAP_PROP_FRAME_COUNT)))):
         ret, frame = video.read()
         frame[(frame[:, :, 2] < 200) | (frame[:, :, 0] > 40) | (frame[:, :, 1] > 40), :] = 0
         matched = cv2.matchTemplate(frame, template, method=cv2.TM_CCOEFF_NORMED)
         maximum = np.unravel_index(np.argmax(matched), matched.shape)
-        file.write("\t".join(list(map(str, maximum))) + "\n")
+        maximum = maximum[::-1]
+        file.write("\t".join([str(idx), ] + list(map(str, maximum))) + "\n")
     file.close()

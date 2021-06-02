@@ -45,6 +45,7 @@ class PreprocessData:
                     output_data_frame = None
                     output_path_video, output_path_data, output_path_left, output_path_right = self._get_output_path(
                         folder, subfolder, subsubfolder)
+                    print(video_files_left)
                     if os.path.exists(output_path_data):
                         print("THIS FOLDER IS ALREADY PROCESSED: {}.".format(output_path_data))
                         continue
@@ -83,6 +84,7 @@ class PreprocessData:
                         if len(video_right_file):
                             self._new_right = self.process_video(self._new_right, video_right_file, time_gap)
                     output_data_frame.to_csv(output_path_data)
+                    del output_data_frame
                     self._new_video.release()
                     self._new_left.release()
                     self._new_right.release()
@@ -177,5 +179,5 @@ class PreprocessData:
 
 
 if __name__ == "__main__":
-    p = PreprocessData("/home/brani/Desktop/BIORIDICE_PROCESSED", "/media/brani/DATA/BIORIDIC_PROCESSED")
+    p = PreprocessData("/home/brani/Desktop/data", "/media/brani/DATA/BIORIDIC_PROCESSED")
     p.execute()
