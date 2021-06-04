@@ -1,3 +1,4 @@
+import os.path
 import sys
 
 import cv2
@@ -109,7 +110,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(self.dropdown2, 1, 1)
         self.layout.addWidget(QtWidgets.QLabel("Synchronization time"), 0, 3)
         synchronization_manager = SynchronizationManager(Configuration.SYNCHRONIZATION_FILE)
-        self._synchronization_time = (self.visualizer.data_loader.bio_signals.initial_utc - self.visualizer.data_loader.initial_utc) / 1000. - synchronization_manager.synchronization_time
+        if os.path.isfile(Configuration.SYNCHRONIZATION_FILE):
+            self._synchronization_time = (self.visualizer.data_loader.bio_signals.initial_utc - self.visualizer.data_loader.initial_utc) / 1000. - synchronization_manager.synchronization_time
+        else:
+            self._synchronization_time = 0
         self.synchronization_text_field = QtWidgets.QLineEdit(str(self._synchronization_time))
         self.synchronization_text_field.textChanged.connect(self._apply_synchronization_time)
         self.synchronization_text_field.setMaximumWidth(120)
